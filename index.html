@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FacilityMapper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0c0c;--surf:#141414;--surf2:#1e1e1e;--surf3:#252525;
+  --border:#252525;--border2:#333;--text:#d0d0d0;--dim:#888;--muted:#4a4a4a;
+  --accent:#f7ce62;--accent-a:rgba(247,206,98,.12);
+  --teal:#84d0d0;--danger:#e05252;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:13px;-webkit-font-smoothing:antialiased}
+.app{display:flex;flex-direction:column;height:100vh}
+.workspace{display:flex;flex:1;min-height:0;overflow:hidden}
+/* TOPBAR */
+.topbar{display:flex;align-items:center;gap:10px;padding:0 14px;height:50px;background:var(--surf);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
+.logo{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.logo-text{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--accent);letter-spacing:.08em}
+.logo-sub{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.06em;margin-top:1px}
+.tb-sep{width:1px;height:22px;background:var(--border2);flex-shrink:0}
+.project-name{flex:1;min-width:0;max-width:200px;background:transparent;border:1px solid transparent;border-radius:4px;color:var(--text);font-family:var(--sans);font-size:13px;padding:4px 8px;outline:none;transition:border-color .15s}
+.project-name:hover{border-color:var(--border2)}
+.project-name:focus{border-color:var(--accent)}
+.tb-right{display:flex;align-items:center;gap:6px;margin-left:auto}
+.btn{display:flex;align-items:center;gap:5px;padding:5px 11px;background:var(--surf2);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-family:var(--sans);font-size:12px;cursor:pointer;white-space:nowrap;transition:background .1s,border-color .1s;user-select:none}
+.btn:hover{background:var(--surf3);border-color:#444}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-ai{color:var(--teal);border-color:var(--teal)}
+.btn-ai:hover{background:rgba(132,208,208,.08)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#111;font-weight:600}
+.btn-primary:hover{background:#fad84a;border-color:#fad84a}
+/* SIDEBAR */
+.sidebar{width:192px;flex-shrink:0;background:var(--surf);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-section{padding:10px 12px 12px;border-bottom:1px solid var(--border)}
+.sb-label{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.tools{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.tool-btn{display:flex;align-items:center;justify-content:center;aspect-ratio:1;background:var(--surf2);border:1px solid var(--border);border-radius:5px;color:var(--dim);cursor:pointer;transition:all .1s;padding:0}
+.tool-btn:hover{background:var(--surf3);border-color:var(--border2);color:var(--text)}
+.tool-btn.active{background:var(--accent-a);border-color:var(--accent);color:var(--accent)}
+.tool-hint{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:7px;line-height:1.7}
+.tool-hint b{color:var(--dim);font-weight:500}
+.profiles{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.p-swatch{border-radius:4px;height:28px;cursor:pointer;border:2px solid transparent;transition:all .12s;display:flex;align-items:center;justify-content:center;font-size:8.5px;font-family:var(--mono);font-weight:500;color:rgba(0,0,0,.65);text-align:center;padding:0 2px}
+.p-swatch:hover{border-color:rgba(255,255,255,.25);transform:scale(1.03)}
+.p-swatch.active{border-color:#fff;box-shadow:0 0 0 2px rgba(247,206,98,.5)}
+.grid-ctrl{display:flex;flex-direction:column;gap:8px}
+.toggle-row{display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--dim);font-size:13px}
+.toggle-row input[type=checkbox]{accent-color:var(--accent);cursor:pointer;width:14px;height:14px}
+.size-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted)}
+.size-row input{width:46px;padding:3px 6px;background:var(--surf2);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-size:12px;font-family:var(--mono);outline:none}
+.size-row input:focus{border-color:var(--accent)}
+.legend-items{display:flex;flex-direction:column;gap:6px}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim)}
+.legend-dot{width:11px;height:11px;border-radius:2px;flex-shrink:0;border:1px solid rgba(0,0,0,.15)}
+.shortcuts{display:flex;flex-direction:column;gap:5px}
+.sc-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted)}
+.key{background:var(--surf2);border:1px solid var(--border2);border-radius:3px;padding:1px 5px;font-family:var(--mono);font-size:10px;color:var(--dim)}
+/* CANVAS */
+.canvas-area{flex:1;min-width:0;overflow:auto;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+.canvas-wrap{position:relative;flex-shrink:0;box-shadow:0 0 0 1px rgba(255,255,255,.04),0 16px 60px rgba(0,0,0,.8)}
+#mapCanvas{display:block;width:min(1000px,calc(100vw - 192px - 200px - 40px));aspect-ratio:1000/800}
+.label-input{position:fixed;width:130px;height:28px;padding:4px 8px;background:rgba(10,10,10,.92);border:1px solid var(--accent);border-radius:4px;color:var(--accent);font-family:var(--sans);font-size:12px;font-weight:600;outline:none;text-align:center;text-transform:uppercase;resize:none;z-index:100;display:none;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+/* PROPERTIES */
+.props{width:200px;flex-shrink:0;background:var(--surf);border-left:1px solid var(--border);overflow-y:auto;padding:12px}
+.no-sel{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px;text-align:center;color:var(--muted);font-size:11px;gap:8px;padding:12px}
+.no-sel-icon{font-size:24px;opacity:.25}
+.prop-title{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.prop-row{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.prop-row label{font-size:10px;color:var(--dim);font-family:var(--mono)}
+.prop-input,.prop-select{width:100%;padding:6px 8px;background:var(--surf2);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--sans);font-size:12px;outline:none;transition:border-color .12s}
+.prop-input:focus,.prop-select:focus{border-color:var(--accent)}
+.prop-select option{background:var(--surf2)}
+.prop-color{height:28px;border-radius:4px;margin-bottom:12px;border:1px solid rgba(255,255,255,.06);transition:background .2s}
+.prop-del{width:100%;padding:6px;background:transparent;border:1px solid rgba(224,82,82,.25);border-radius:4px;color:var(--danger);font-size:11px;font-family:var(--sans);cursor:pointer;transition:all .12s;margin-top:4px}
+.prop-del:hover{background:rgba(224,82,82,.1);border-color:var(--danger)}
+.prop-info{font-family:var(--mono);font-size:10px;color:var(--dim);margin-bottom:12px;line-height:1.8;background:var(--surf2);padding:8px;border-radius:4px;border:1px solid var(--border)}
+.prop-btn{width:100%;padding:6px;background:var(--surf2);border:1px solid var(--border2);border-radius:4px;color:var(--dim);font-size:11px;font-family:var(--sans);cursor:pointer;transition:all .12s;margin-top:4px}
+.prop-btn:hover{background:var(--surf3);border-color:#444;color:var(--text)}
+/* STATUS */
+.statusbar{height:22px;background:var(--surf);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:16px;flex-shrink:0}
+.stat{font-family:var(--mono);font-size:9px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.stat span{color:var(--dim)}
+/* AI OVERLAY */
+.ai-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.ai-overlay.show{display:flex}
+.ai-modal{background:var(--surf);border:1px solid var(--border2);border-radius:10px;padding:32px 28px;text-align:center;max-width:300px;box-shadow:0 24px 80px rgba(0,0,0,.7)}
+.ai-spin{width:36px;height:36px;border:2px solid var(--border2);border-top-color:var(--teal);border-radius:50%;animation:spin .75s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-modal h3{font-family:var(--mono);font-size:13px;color:var(--text);margin-bottom:6px}
+.ai-modal p{font-size:11px;color:var(--dim);line-height:1.6}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="logo">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <rect x="2" y="2" width="16" height="16" rx="2" stroke="#f7ce62" stroke-width="1.5"/>
+        <rect x="5" y="7" width="4" height="9" fill="#84d0d0" opacity=".8"/>
+        <rect x="11" y="5" width="4" height="11" fill="#c87ebf" opacity=".8"/>
+        <rect x="5" y="5" width="10" height="2" fill="#f7ce62" opacity=".6"/>
+      </svg>
+      <div><div class="logo-text">FACILITYMAPPER</div><div class="logo-sub">TEMP ZONE EDITOR</div></div>
+    </div>
+    <div class="tb-sep"></div>
+    <input class="project-name" id="projectName" type="text" value="Untitled Facility" spellcheck="false">
+    <div class="tb-sep"></div>
+    <div class="tb-right">
+      <button class="btn" id="btnUpload">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 8.5V1.5M3.5 4.5L6.5 1.5L9.5 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 10.5V12H12V10.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Upload Floor Plan
+      </button>
+      <button class="btn btn-ai" id="btnAI">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4"/><path d="M4 6.5H9M6.5 4V9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        AI Detect Zones
+      </button>
+      <div class="tb-sep"></div>
+      <button class="btn" id="btnLoad">Load Project</button>
+      <button class="btn" id="btnSave" title="Save (Ctrl+S) — overwrites existing file">Save</button>
+      <button class="btn" id="btnSaveAs" title="Save As — choose a new location">Save As…</button>
+      <button class="btn btn-primary" id="btnExport">Export PNG</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <aside class="sidebar">
+      <div class="sb-section">
+        <div class="sb-label">Tools</div>
+        <div class="tools">
+          <button class="tool-btn active" data-tool="select" title="Select / Move (V)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2L3 10.5L5.5 8L7.5 12L9 11.2L7 7L10 7L3 2Z" fill="currentColor"/></svg>
+          </button>
+          <button class="tool-btn" data-tool="rect" title="Rectangle Zone (R)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+          </button>
+          <button class="tool-btn" data-tool="poly" title="Polygon Zone (P)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="7,1 13,5 11,12 3,12 1,5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="tool-btn" data-tool="repeater" title="Place Repeater (T)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="3" y="2" width="8" height="8" rx="2" fill="currentColor" opacity=".9"/><path d="M7 10L7 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M5.5 12.5L7 14L8.5 12.5" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" fill="none"/></svg>
+          </button>
+          <button class="tool-btn" data-tool="north" title="Place North Arrow (N)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L7 13M4 4L7 1L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="tool-hint">
+          <b>V</b> Select &nbsp;<b>R</b> Rect &nbsp;<b>P</b> Poly<br>
+          <b>T</b> Repeater &nbsp;<b>N</b> North &nbsp;<b>Del</b> Delete<br>
+          <b>Esc</b> Cancel &nbsp;<b>2×click</b> Edit label
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">Temperature Profile</div>
+        <div class="profiles" id="profileSwatches"></div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">Visibility</div>
+        <div class="grid-ctrl">
+          <label class="toggle-row">
+            <input type="checkbox" id="fpToggle" checked>
+            <span>Show floor plan</span>
+          </label>
+          <label class="toggle-row">
+            <input type="checkbox" id="fpLockToggle">
+            <span>Lock floor plan</span>
+          </label>
+          <label class="toggle-row">
+            <input type="checkbox" id="zonesToggle" checked>
+            <span>Show zones</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">Grid</div>
+        <div class="grid-ctrl">
+          <label class="toggle-row">
+            <input type="checkbox" id="gridToggle" checked>
+            <span>Snap to grid</span>
+          </label>
+          <div class="size-row">
+            <span>Grid size (px)</span>
+            <input type="number" id="gridSize" value="8" min="2" max="80">
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">Legend</div>
+        <div class="legend-items" id="legendItems"></div>
+      </div>
+
+      <div class="sb-section" style="flex:1;border-bottom:none">
+        <div class="sb-label">Shortcuts</div>
+        <div class="shortcuts">
+          <div class="sc-row"><span>Select</span><span class="key">V</span></div>
+          <div class="sc-row"><span>Rectangle</span><span class="key">R</span></div>
+          <div class="sc-row"><span>Polygon</span><span class="key">P</span></div>
+          <div class="sc-row"><span>Repeater</span><span class="key">T</span></div>
+          <div class="sc-row"><span>North Arrow</span><span class="key">N</span></div>
+          <div class="sc-row"><span>Delete</span><span class="key">Del</span></div>
+          <div class="sc-row"><span>Cancel draw</span><span class="key">Esc</span></div>
+          <div class="sc-row"><span>Edit label</span><span class="key">2×click</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="canvas-area">
+      <div class="canvas-wrap">
+        <canvas id="mapCanvas" width="1000" height="800"></canvas>
+        <textarea id="labelInput" class="label-input" rows="1"></textarea>
+      </div>
+    </main>
+
+    <aside class="props" id="propsPanel">
+      <div class="no-sel"><div class="no-sel-icon">⬜</div><p>Select an element<br>to edit properties</p></div>
+    </aside>
+  </div>
+
+  <div class="statusbar">
+    <div class="stat"><span>XY</span> <span id="stCoords">0, 0</span></div>
+    <div class="stat"><span>Zones</span> <span id="stZones">0</span></div>
+    <div class="stat"><span>Devices</span> <span id="stDevices">0</span></div>
+    <div class="stat"><span>Tool</span> <span id="stTool">select</span></div>
+    <div class="stat"><span>Profile</span> <span id="stProfile">Cooler</span></div>
+  </div>
+</div>
+
+<div class="ai-overlay" id="aiOverlay">
+  <div class="ai-modal">
+    <div class="ai-spin"></div>
+    <h3>Analyzing Floor Plan</h3>
+    <p>AI is detecting temperature zones from your annotated image. This takes a few seconds…</p>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" style="display:none">
+<input type="file" id="projectInput" accept=".facilitymap,.json" style="display:none">
+
+<script>
+/* ================================================================
+   CONSTANTS
+================================================================ */
+const PROFILES = {
+  'Office/Unmonitored': { color:'#cdb79f', short:'OFFICE' },
+  'Dry':                { color:'#f7ce62', short:'DRY' },
+  'Cooler':             { color:'#64a3d8', short:'COOLER' },
+  'Freezer':            { color:'#c87ebf', short:'FREEZER' },
+  'Cool Dock':          { color:'#84d0d0', short:'COOL DOCK' },
+  'Produce/Warm Area':  { color:'#b85945', short:'PRODUCE' },
+};
+const CW=1000, CH=800, RB=2, MB=6, BC='#5B5B5B', HS=8, PS=40;
+const FP_ID='__fp__';
+const EDGE_SNAP_T=10; // px threshold for edge-to-edge snapping
+
+/* ================================================================
+   STATE
+================================================================ */
+const S = {
+  name:'Untitled Facility',
+  floorPlan:null,
+  fpVisible:true,
+  fpLocked:false,
+  fp:{x:0,y:0,w:CW,h:CH},   // floor plan bounds on canvas
+  zones:[], devices:[],
+  tool:'select', selId:null, selIds:new Set(), profile:'Cooler',
+  drawing:false, drawStart:null, drawCur:null, polyPts:[],
+  dragging:false, dragStart:null, dragOrig:null,
+  resizing:false, resizeH:null, resizeOrig:null,
+  grid:true, gridSize:8,
+  zonesVisible:true,
+  apiKey:localStorage.getItem('fm_key')||'',
+  _nid:1, mx:0, my:0,
+  snapLinesX:[], snapLinesY:[]  // active snap line positions for visual feedback
+};
+
+/* ================================================================
+   UNDO HISTORY
+================================================================ */
+const HISTORY=[];
+const MAX_HIST=50;
+
+function pushHistory(){
+  HISTORY.push({
+    zones:JSON.parse(JSON.stringify(S.zones)),
+    devices:JSON.parse(JSON.stringify(S.devices)),
+    fp:{...S.fp},
+    _nid:S._nid
+  });
+  if(HISTORY.length>MAX_HIST) HISTORY.shift();
+}
+
+function undo(){
+  if(!HISTORY.length) return;
+  const prev=HISTORY.pop();
+  S.zones=prev.zones;S.devices=prev.devices;S.fp=prev.fp;S._nid=prev._nid;
+  S.selId=null;S.selIds=new Set();S.drawing=false;S.polyPts=[];S.drawCur=null;
+  updateProps();
+}
+
+/* ================================================================
+   EDGE SNAPPING
+================================================================ */
+function edgeSnap(el){
+  // Only snaps rect zones against other rect zones
+  if(el.type!=='rect') return;
+  const others=S.zones.filter(z=>z.id!==el.id&&z.type==='rect');
+  const eX=[el.x, el.x+el.w];
+  const eY=[el.y, el.y+el.h];
+  let bestDX=EDGE_SNAP_T+1, bestDY=EDGE_SNAP_T+1, snapDX=0, snapDY=0;
+  const snapX=[], snapY=[];
+
+  for(const o of others){
+    const oX=[o.x, o.x+o.w], oY=[o.y, o.y+o.h];
+    // Check all el x-edges vs all other x-edges
+    for(const ex of eX) for(const ox of oX){
+      const d=Math.abs(ox-ex);
+      if(d<bestDX){bestDX=d;snapDX=ox-ex;snapX.length=0;snapX.push(ox);}
+      else if(d===bestDX) snapX.push(ox);
+    }
+    // Check all el y-edges vs all other y-edges
+    for(const ey of eY) for(const oy of oY){
+      const d=Math.abs(oy-ey);
+      if(d<bestDY){bestDY=d;snapDY=oy-ey;snapY.length=0;snapY.push(oy);}
+      else if(d===bestDY) snapY.push(oy);
+    }
+  }
+
+  if(bestDX<=EDGE_SNAP_T){el.x+=snapDX;S.snapLinesX=snapX;}
+  else S.snapLinesX=[];
+  if(bestDY<=EDGE_SNAP_T){el.y+=snapDY;S.snapLinesY=snapY;}
+  else S.snapLinesY=[];
+}
+
+/* ================================================================
+   ZONE MERGE — polygon union for rect zones
+================================================================ */
+function computeRectUnion(rects){
+  const xs=[...new Set(rects.flatMap(r=>[r.x,r.x+r.w]))].sort((a,b)=>a-b);
+  const ys=[...new Set(rects.flatMap(r=>[r.y,r.y+r.h]))].sort((a,b)=>a-b);
+  const rows=ys.length-1, cols=xs.length-1;
+  if(rows<1||cols<1) return null;
+
+  // Build occupancy grid — cell (iy,ix) is filled if its center is inside any rect
+  const grid=Array.from({length:rows},()=>new Array(cols).fill(false));
+  for(const r of rects)
+    for(let iy=0;iy<rows;iy++) for(let ix=0;ix<cols;ix++)
+      if((xs[ix]+xs[ix+1])/2>=r.x&&(xs[ix]+xs[ix+1])/2<r.x+r.w&&
+         (ys[iy]+ys[iy+1])/2>=r.y&&(ys[iy]+ys[iy+1])/2<r.y+r.h)
+        grid[iy][ix]=true;
+
+  // Collect directed boundary edges (CCW winding)
+  const edges=[];
+  for(let iy=0;iy<rows;iy++) for(let ix=0;ix<cols;ix++){
+    if(!grid[iy][ix]) continue;
+    const[x0,x1,y0,y1]=[xs[ix],xs[ix+1],ys[iy],ys[iy+1]];
+    if(iy===0||!grid[iy-1][ix]) edges.push([x0,y0,x1,y0]); // top
+    if(ix===cols-1||!grid[iy][ix+1]) edges.push([x1,y0,x1,y1]); // right
+    if(iy===rows-1||!grid[iy+1][ix]) edges.push([x1,y1,x0,y1]); // bottom
+    if(ix===0||!grid[iy][ix-1]) edges.push([x0,y1,x0,y0]); // left
+  }
+  if(!edges.length) return null;
+
+  // Chain edges into polygon path
+  const startMap=new Map();
+  for(const e of edges) startMap.set(`${e[0]},${e[1]}`,e);
+  const pts=[];
+  let cur=edges[0];
+  const startKey=`${cur[0]},${cur[1]}`;
+  for(let i=0;i<edges.length;i++){
+    pts.push({x:cur[0],y:cur[1]});
+    cur=startMap.get(`${cur[2]},${cur[3]}`);
+    if(!cur||`${cur[0]},${cur[1]}`===startKey) break;
+  }
+
+  // Remove collinear points
+  const n=pts.length, result=[];
+  for(let i=0;i<n;i++){
+    const a=pts[(i-1+n)%n],b=pts[i],c=pts[(i+1)%n];
+    if(Math.abs((b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x))>0.5) result.push(b);
+  }
+  return result.length>=3?result:null;
+}
+
+function mergeSelected(){
+  const ids=[...S.selIds];
+  const rects=ids.map(id=>S.zones.find(z=>z.id===id)).filter(z=>z&&z.type==='rect');
+  if(rects.length<2){alert('Select 2 or more rectangle zones to merge.');return;}
+  const pts=computeRectUnion(rects);
+  if(!pts){alert('Could not compute union — zones may not overlap or share edges.');return;}
+  pushHistory();
+  const first=rects[0];
+  const merged={id:newId(),type:'poly',profile:first.profile,label:first.label,pts,fontSize:first.fontSize||12,rotation:first.rotation||0};
+  for(const r of rects) S.zones=S.zones.filter(z=>z.id!==r.id);
+  S.zones.push(merged);
+  S.selId=merged.id;S.selIds=new Set([merged.id]);
+  updateProps();
+}
+
+const newId=()=>`e${S._nid++}`;
+const snap=v=>S.grid?Math.round(v/S.gridSize)*S.gridSize:v;
+const getEl=id=>id===FP_ID?null:S.zones.find(z=>z.id===id)||S.devices.find(d=>d.id===id)||null;
+function removeEl(id){
+  pushHistory();
+  S.zones=S.zones.filter(z=>z.id!==id);
+  S.devices=S.devices.filter(d=>d.id!==id);
+  S.selIds.delete(id);
+  if(S.selId===id){S.selId=null;updateProps();}
+}
+
+/* ================================================================
+   CANVAS
+================================================================ */
+const canvas=document.getElementById('mapCanvas');
+const ctx=canvas.getContext('2d');
+const labelInput=document.getElementById('labelInput');
+function xy(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*(CW/r.width),y:(e.clientY-r.top)*(CH/r.height)};}
+
+/* ================================================================
+   FLOOR PLAN — 4 corner handles
+================================================================ */
+function fpCorners(){
+  const{x,y,w,h}=S.fp;
+  const PAD=10; // keep handles this far from canvas edge at minimum
+  const cx=v=>Math.max(PAD,Math.min(CW-PAD,v));
+  const cy=v=>Math.max(PAD,Math.min(CH-PAD,v));
+  return[
+    {x:cx(x),   y:cy(y),   cx:-1,cy:-1,cur:'nw-resize'},
+    {x:cx(x+w), y:cy(y),   cx:1, cy:-1,cur:'ne-resize'},
+    {x:cx(x+w), y:cy(y+h), cx:1, cy:1, cur:'se-resize'},
+    {x:cx(x),   y:cy(y+h), cx:-1,cy:1, cur:'sw-resize'},
+  ];
+}
+function fpCornerAt(x,y){
+  if(!S.floorPlan||S.fpLocked) return null;
+  return fpCorners().find(h=>Math.abs(x-h.x)<=HS+3&&Math.abs(y-h.y)<=HS+3)||null;
+}
+function hitFP(x,y){return S.floorPlan&&!S.fpLocked&&x>=S.fp.x&&x<=S.fp.x+S.fp.w&&y>=S.fp.y&&y<=S.fp.y+S.fp.h;}
+
+/* ================================================================
+   HIT TESTING — devices > zones > floor plan (lowest)
+================================================================ */
+function hitAll(x,y){
+  for(let i=S.devices.length-1;i>=0;i--) if(hitDev(x,y,S.devices[i])) return S.devices[i].id;
+  for(let i=S.zones.length-1;i>=0;i--) if(hitZone(x,y,S.zones[i])) return S.zones[i].id;
+  if(hitFP(x,y)) return FP_ID;
+  return null;
+}
+function hitZone(x,y,z){
+  if(z.type==='rect') return x>=z.x&&x<=z.x+z.w&&y>=z.y&&y<=z.y+z.h;
+  if(z.type==='poly') return pip(x,y,z.pts);
+  return false;
+}
+function hitDev(x,y,d){
+  if(d.type==='repeater'){const bx=d.x-PS/2,by=d.y-PS;return x>=bx&&x<=bx+PS&&y>=by&&y<=by+PS+10;}
+  if(d.type==='north') return Math.abs(x-d.x)<28&&Math.abs(y-d.y)<32;
+  return false;
+}
+function pip(x,y,pts){
+  let inside=false;
+  for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+    const xi=pts[i].x,yi=pts[i].y,xj=pts[j].x,yj=pts[j].y;
+    if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi) inside=!inside;
+  }
+  return inside;
+}
+
+/* Zone resize handles (8-handle, rect only) */
+function zHandles(z){
+  const{x,y,w,h}=z;
+  return[
+    {x,y,cx:-1,cy:-1,cur:'nw-resize'},{x:x+w/2,y,cx:0,cy:-1,cur:'n-resize'},
+    {x:x+w,y,cx:1,cy:-1,cur:'ne-resize'},{x:x+w,y:y+h/2,cx:1,cy:0,cur:'e-resize'},
+    {x:x+w,y:y+h,cx:1,cy:1,cur:'se-resize'},{x:x+w/2,y:y+h,cx:0,cy:1,cur:'s-resize'},
+    {x,y:y+h,cx:-1,cy:1,cur:'sw-resize'},{x,y:y+h/2,cx:-1,cy:0,cur:'w-resize'},
+  ];
+}
+function zHandleAt(x,y,z){
+  if(z.type!=='rect') return null;
+  return zHandles(z).find(h=>Math.abs(x-h.x)<=HS&&Math.abs(y-h.y)<=HS)||null;
+}
+
+/* ================================================================
+   RENDER
+================================================================ */
+function render(){
+  ctx.clearRect(0,0,CW,CH);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,CW,CH);
+
+  // Floor plan image
+  if(S.floorPlan&&S.fpVisible) ctx.drawImage(S.floorPlan,S.fp.x,S.fp.y,S.fp.w,S.fp.h);
+
+  // Grid
+  if(S.grid){
+    ctx.strokeStyle='rgba(0,0,0,.05)';ctx.lineWidth=1;
+    for(let x=0;x<=CW;x+=S.gridSize){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,CH);ctx.stroke();}
+    for(let y=0;y<=CH;y+=S.gridSize){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();}
+  }
+
+  // Floor plan selection: dashed outline + 4 corner handles
+  if(S.selId===FP_ID&&S.floorPlan){
+    const{x,y,w,h}=S.fp;
+    ctx.strokeStyle='#f7ce62';ctx.lineWidth=1.5;ctx.setLineDash([5,3]);
+    ctx.strokeRect(x-3,y-3,w+6,h+6);ctx.setLineDash([]);
+    fpCorners().forEach(h=>{
+      ctx.fillStyle='#fff';ctx.strokeStyle='#f7ce62';ctx.lineWidth=1.5;
+      const s=HS+2;ctx.fillRect(h.x-s/2,h.y-s/2,s,s);ctx.strokeRect(h.x-s/2,h.y-s/2,s,s);
+    });
+  }
+
+  // Zones — multi-pass for outer perimeter border
+  if(S.zonesVisible) renderAllZones(ctx,S.zones,S.selIds);
+
+  // Snap lines (shown while dragging)
+  if(S.dragging){
+    ctx.save();ctx.strokeStyle='rgba(247,206,98,.75)';ctx.lineWidth=1;ctx.setLineDash([4,3]);
+    S.snapLinesX.forEach(x=>{ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,CH);ctx.stroke();});
+    S.snapLinesY.forEach(y=>{ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();});
+    ctx.restore();
+  }
+
+  // Drawing preview
+  if(S.drawing) drawPreview(ctx);
+
+  // Devices
+  S.devices.forEach(d=>drawDevice(ctx,d,d.id===S.selId));
+
+  // Zone resize handles
+  if(S.selId&&S.selId!==FP_ID){const el=getEl(S.selId);if(el?.type==='rect') drawZHandles(ctx,el);}
+
+  // Status
+  document.getElementById('stCoords').textContent=`${Math.round(S.mx)}, ${Math.round(S.my)}`;
+  document.getElementById('stZones').textContent=S.zones.length;
+  document.getElementById('stDevices').textContent=S.devices.length;
+  document.getElementById('stTool').textContent=S.tool;
+  document.getElementById('stProfile').textContent=PROFILES[S.profile]?.short||S.profile;
+
+  requestAnimationFrame(render);
+}
+
+/* Multi-pass zone renderer — centered borders throughout:
+   - Outer perimeter: 6px centered (3px inside + 3px outside zone boundary)
+   - Interior borders: 2px centered (1px each side, shared edges overlap cleanly)
+*/
+function renderAllZones(c,zones,selIds){
+  if(!zones.length) return;
+
+  // Pass 1: 6px stroke for all zones — 3px bleeds outside, 3px bleeds inside
+  c.strokeStyle=BC;c.lineWidth=MB;c.lineJoin='miter';
+  zones.forEach(z=>{
+    if(z.type==='rect') c.strokeRect(z.x,z.y,z.w,z.h);
+    else if(z.type==='poly'&&z.pts?.length>0){polyPath(c,z.pts);c.stroke();}
+  });
+
+  // Pass 2: fill each zone — covers the inner 6px of thick stroke
+  zones.forEach(z=>{
+    const col=PROFILES[z.profile]?.color||'#ccc';
+    c.fillStyle=col;
+    if(z.type==='rect') c.fillRect(z.x,z.y,z.w,z.h);
+    else if(z.type==='poly'&&z.pts?.length>0){polyPath(c,z.pts);c.fill();}
+  });
+
+  // Pass 3: re-draw thin 2px borders (interior zone lines)
+  c.strokeStyle=BC;c.lineWidth=RB;
+  zones.forEach(z=>{
+    if(z.type==='rect') c.strokeRect(z.x,z.y,z.w,z.h);
+    else if(z.type==='poly'&&z.pts?.length>0){polyPath(c,z.pts);c.stroke();}
+  });
+
+  // Pass 4: labels
+  zones.forEach(z=>{
+    let lx,ly;
+    if(z.type==='rect'){lx=z.x+z.w/2;ly=z.y+z.h/2;}
+    else if(z.type==='poly'&&z.pts?.length>0){lx=z.pts.reduce((s,p)=>s+p.x,0)/z.pts.length;ly=z.pts.reduce((s,p)=>s+p.y,0)/z.pts.length;}
+    if(lx!==undefined) drawLabel(c,z.label,lx,ly,z);
+  });
+
+  // Pass 5: selection indicators (all selected zones)
+  c.strokeStyle='#f7ce62';c.lineWidth=1.5;c.setLineDash([5,3]);
+  zones.forEach(z=>{
+    if(!selIds.has(z.id)) return;
+    if(z.type==='rect') c.strokeRect(z.x-3,z.y-3,z.w+6,z.h+6);
+    else if(z.type==='poly'&&z.pts?.length>0){polyPath(c,z.pts);c.stroke();}
+  });
+  c.setLineDash([]);
+  // Vertex handles for selected poly
+  zones.forEach(z=>{
+    if(!selIds.has(z.id)||z.type!=='poly') return;
+    z.pts.forEach(p=>{c.fillStyle='#f7ce62';c.strokeStyle='#111';c.lineWidth=1;c.beginPath();c.arc(p.x,p.y,5,0,Math.PI*2);c.fill();c.stroke();});
+  });
+}
+
+function drawZone(c,z,sel){
+  // Legacy — kept for compatibility, renderAllZones handles multi-pass rendering
+  const col=PROFILES[z.profile]?.color||'#ccc';
+  c.save();
+  if(z.type==='rect'){
+    c.fillStyle=col;c.fillRect(z.x,z.y,z.w,z.h);
+    c.strokeStyle=BC;c.lineWidth=RB;c.strokeRect(z.x,z.y,z.w,z.h);
+    drawLabel(c,z.label,z.x+z.w/2,z.y+z.h/2,z);
+    if(sel){c.strokeStyle='#f7ce62';c.lineWidth=1.5;c.setLineDash([5,3]);c.strokeRect(z.x-3,z.y-3,z.w+6,z.h+6);c.setLineDash([]);}
+  } else if(z.type==='poly'&&z.pts?.length>0){
+    polyPath(c,z.pts);c.fillStyle=col;c.fill();c.strokeStyle=BC;c.lineWidth=RB;c.stroke();
+    const cx=z.pts.reduce((s,p)=>s+p.x,0)/z.pts.length,cy=z.pts.reduce((s,p)=>s+p.y,0)/z.pts.length;
+    drawLabel(c,z.label,cx,cy,z);
+    if(sel){c.strokeStyle='#f7ce62';c.lineWidth=1.5;c.setLineDash([5,3]);polyPath(c,z.pts);c.stroke();c.setLineDash([]);z.pts.forEach(p=>{c.fillStyle='#f7ce62';c.strokeStyle='#111';c.lineWidth=1;c.beginPath();c.arc(p.x,p.y,5,0,Math.PI*2);c.fill();c.stroke();});}
+  }
+  c.restore();
+}
+
+function drawLabel(c,text,x,y,z){
+  if(!text) return;
+  const rot=(z?.rotation)||0;
+  const baseFontSize=(z?.fontSize)||12;
+
+  // Determine max width for auto-fit
+  let maxW=Infinity;
+  if(z?.type==='rect'){
+    maxW=(rot===90?z.h:z.w)*0.82;
+  } else if(z?.type==='poly'&&z?.pts?.length>0){
+    const xs=z.pts.map(p=>p.x),ys=z.pts.map(p=>p.y);
+    const pw=Math.max(...xs)-Math.min(...xs),ph=Math.max(...ys)-Math.min(...ys);
+    maxW=(rot===90?ph:pw)*0.72;
+  }
+
+  // Auto-fit: shrink from baseFontSize down to 7px minimum
+  let fs=baseFontSize;
+  c.font=`600 ${fs}px "DM Sans",sans-serif`;
+  while(maxW<Infinity&&c.measureText(text).width>maxW&&fs>7){
+    fs--;c.font=`600 ${fs}px "DM Sans",sans-serif`;
+  }
+
+  c.save();
+  c.translate(x,y);
+  if(rot===90) c.rotate(-Math.PI/2); // counter-clockwise = reads bottom-to-top
+  c.fillStyle='#000';
+  c.font=`600 ${fs}px "DM Sans",sans-serif`;
+  c.textAlign='center';c.textBaseline='middle';
+  c.fillText(text,0,0);
+  c.restore();
+}
+function polyPath(c,pts){c.beginPath();c.moveTo(pts[0].x,pts[0].y);pts.slice(1).forEach(p=>c.lineTo(p.x,p.y));c.closePath();}
+
+function drawPreview(c){
+  const col=PROFILES[S.profile]?.color||'#ccc';
+  if(S.tool==='rect'&&S.drawStart&&S.drawCur){
+    const x=Math.min(S.drawStart.x,S.drawCur.x),y=Math.min(S.drawStart.y,S.drawCur.y);
+    const w=Math.abs(S.drawCur.x-S.drawStart.x),h=Math.abs(S.drawCur.y-S.drawStart.y);
+    c.fillStyle=col+'99';c.fillRect(x,y,w,h);
+    c.strokeStyle=BC;c.lineWidth=RB;c.setLineDash([4,3]);c.strokeRect(x,y,w,h);c.setLineDash([]);
+    if(w>30&&h>20){c.fillStyle='rgba(0,0,0,.55)';c.font='10px "DM Mono",monospace';c.textAlign='center';c.textBaseline='middle';c.fillText(`${Math.round(w)}×${Math.round(h)}`,x+w/2,y+h/2);}
+  }
+  if(S.tool==='poly'&&S.polyPts.length>0){
+    c.beginPath();c.moveTo(S.polyPts[0].x,S.polyPts[0].y);S.polyPts.slice(1).forEach(p=>c.lineTo(p.x,p.y));if(S.drawCur) c.lineTo(S.drawCur.x,S.drawCur.y);
+    c.strokeStyle=BC;c.lineWidth=RB;c.setLineDash([4,3]);c.stroke();c.setLineDash([]);
+    S.polyPts.forEach((p,i)=>{c.fillStyle=i===0?'#f7ce62':'#fff';c.strokeStyle='#333';c.lineWidth=1.5;c.beginPath();c.arc(p.x,p.y,5,0,Math.PI*2);c.fill();c.stroke();});
+    if(S.polyPts.length>2&&S.drawCur){const fp=S.polyPts[0];if(Math.hypot(S.drawCur.x-fp.x,S.drawCur.y-fp.y)<20){c.strokeStyle='#f7ce62';c.lineWidth=2;c.beginPath();c.arc(fp.x,fp.y,11,0,Math.PI*2);c.stroke();}}
+  }
+}
+
+function drawDevice(c,d,sel){c.save();if(d.type==='repeater') drawPin(c,d.x,d.y,d.label,sel);else if(d.type==='north') drawNorth(c,d.x,d.y,d.dir,sel);c.restore();}
+
+function drawPin(c,x,y,label,sel){
+  // Figma spec: 40×40px total, dark speech-bubble marker, Inter SemiBold 10px white label
+  // Body: 40×31px rounded rect (r=8), tail: 9px centered triangle below body
+  const bw=40,bh=31,tail=9,r=8;
+  const bx=x-bw/2, by=y-bh-tail;
+
+  c.save();
+
+  // Drop shadow (matches Figma: 0px 6.667px 13.333px -3.333px + 0px 3.333px 6.667px -3.333px)
+  c.shadowColor='rgba(16,24,40,0.18)';c.shadowBlur=16;c.shadowOffsetY=7;
+
+  // Speech-bubble path: rounded rect body + centered triangular tail
+  c.fillStyle='#2C2C2D';
+  c.beginPath();
+  c.moveTo(bx+r,by);
+  c.lineTo(bx+bw-r,by);
+  c.quadraticCurveTo(bx+bw,by,bx+bw,by+r);
+  c.lineTo(bx+bw,by+bh-r);
+  c.quadraticCurveTo(bx+bw,by+bh,bx+bw-r,by+bh);
+  c.lineTo(bx+bw/2+5,by+bh);
+  c.lineTo(bx+bw/2,by+bh+tail);   // tip
+  c.lineTo(bx+bw/2-5,by+bh);
+  c.lineTo(bx+r,by+bh);
+  c.quadraticCurveTo(bx,by+bh,bx,by+bh-r);
+  c.lineTo(bx,by+r);
+  c.quadraticCurveTo(bx,by,bx+r,by);
+  c.closePath();
+  c.fill();
+  c.shadowColor='transparent';
+
+  // Label — Inter Semi Bold 10px white, centered in body
+  c.fillStyle='#FFFFFF';
+  c.font='600 10px "DM Sans",sans-serif';
+  c.textAlign='center';
+  c.textBaseline='middle';
+  c.fillText(label,x,by+bh/2);
+
+  // Selection ring
+  if(sel){
+    c.strokeStyle='#f7ce62';c.lineWidth=2;c.setLineDash([4,3]);
+    c.strokeRect(bx-4,by-4,bw+8,bh+tail+8);
+    c.setLineDash([]);
+  }
+  c.restore();
+}
+
+function drawNorth(c,x,y,dir='Up',sel){
+  // Figma: NavigationPointer02 (outlined arrow) + "N" Inter Bold 14px black, tight layout
+  const ARR=20, NSIZE=14, GAP=1;
+  // Total component centered at (x,y): arrow + gap + N label stacked
+  const halfTotal=(ARR+GAP+NSIZE)/2;
+
+  c.save();
+  c.font=`bold ${NSIZE}px "DM Sans",sans-serif`;
+  c.textAlign='center';c.textBaseline='middle';
+
+  function navArrow(ax,ay,rot){
+    c.save();c.translate(ax,ay);c.rotate(rot);
+    const h=ARR/2;
+    c.strokeStyle='#000';c.lineWidth=1.5;c.lineJoin='round';
+    c.beginPath();
+    c.moveTo(0,-h);c.lineTo(h*0.55,h*0.3);c.lineTo(0,h*0.05);c.lineTo(-h*0.55,h*0.3);
+    c.closePath();
+    c.fillStyle='rgba(255,255,255,0.9)';c.fill();
+    c.stroke();
+    c.restore();
+  }
+
+  const rots={Up:0,Down:Math.PI,Left:-Math.PI/2,Right:Math.PI/2};
+  const rot=rots[dir]||0;
+
+  if(dir==='Up'){
+    navArrow(x, y-halfTotal+ARR/2, rot);
+    c.fillStyle='#000';c.fillText('N',x, y+halfTotal-NSIZE/2);
+  } else if(dir==='Down'){
+    c.fillStyle='#000';c.fillText('N',x, y-halfTotal+NSIZE/2);
+    navArrow(x, y+halfTotal-ARR/2, rot);
+  } else if(dir==='Left'){
+    navArrow(x-halfTotal+ARR/2, y, rot);
+    c.fillStyle='#000';c.fillText('N',x+halfTotal-NSIZE/2, y);
+  } else if(dir==='Right'){
+    c.fillStyle='#000';c.fillText('N',x-halfTotal+NSIZE/2, y);
+    navArrow(x+halfTotal-ARR/2, y, rot);
+  }
+
+  if(sel){
+    c.strokeStyle='#f7ce62';c.lineWidth=2;c.setLineDash([4,3]);
+    c.strokeRect(x-halfTotal-4,y-halfTotal-4,halfTotal*2+8,halfTotal*2+8);
+    c.setLineDash([]);
+  }
+  c.restore();
+}
+
+function drawZHandles(c,z){
+  zHandles(z).forEach(h=>{c.fillStyle='#fff';c.strokeStyle='#f7ce62';c.lineWidth=1.5;c.fillRect(h.x-HS/2,h.y-HS/2,HS,HS);c.strokeRect(h.x-HS/2,h.y-HS/2,HS,HS);});
+}
+
+/* ================================================================
+   MOUSE EVENTS
+================================================================ */
+canvas.addEventListener('mousedown',e=>{
+  const{x,y}=xy(e);const sx=snap(x),sy=snap(y);
+  if(S.tool==='select'){
+    // 1. Check fp corner handles
+    if(S.selId===FP_ID&&S.floorPlan){
+      const h=fpCornerAt(x,y);
+      if(h){pushHistory();S.resizing=true;S.resizeH=h;S.resizeOrig={...S.fp};return;}
+    }
+    // 2. Check zone resize handles (only when single-selected)
+    if(S.selId&&S.selId!==FP_ID&&S.selIds.size<=1){
+      const el=getEl(S.selId);
+      if(el?.type==='rect'){const h=zHandleAt(x,y,el);if(h){pushHistory();S.resizing=true;S.resizeH=h;S.resizeOrig=JSON.parse(JSON.stringify(el));return;}}
+    }
+    // 3. Hit test
+    const hit=hitAll(x,y);
+    if(e.shiftKey&&hit&&hit!==FP_ID){
+      // Shift+click: toggle zone in/out of multi-select
+      if(S.selIds.has(hit)){S.selIds.delete(hit);if(S.selId===hit) S.selId=[...S.selIds][0]||null;}
+      else{S.selIds.add(hit);S.selId=hit;}
+      updateProps();return;
+    }
+    // Normal single select
+    S.selId=hit;S.selIds=hit&&hit!==FP_ID?new Set([hit]):hit===FP_ID?new Set():new Set();
+    updateProps();
+    if(hit){
+      pushHistory();
+      S.dragging=true;S.dragStart={x,y};
+      S.dragOrig=hit===FP_ID?{...S.fp}:JSON.parse(JSON.stringify(getEl(hit)));
+    }
+  } else if(S.tool==='rect'){
+    // If clicking an existing element, drag it; otherwise draw new zone
+    const hit=hitAll(x,y);
+    if(hit&&hit!==FP_ID){
+      pushHistory();
+      S.selId=hit;S.dragging=true;S.dragStart={x,y};
+      S.dragOrig=JSON.parse(JSON.stringify(getEl(hit)));updateProps();
+    } else {
+      S.drawing=true;S.drawStart={x:sx,y:sy};S.drawCur={x:sx,y:sy};
+    }
+  } else if(S.tool==='poly'){
+    // If not mid-polygon and clicking existing element, drag it
+    if(!S.polyPts.length){
+      const hit=hitAll(x,y);
+      if(hit&&hit!==FP_ID){
+        pushHistory();
+        S.selId=hit;S.dragging=true;S.dragStart={x,y};
+        S.dragOrig=JSON.parse(JSON.stringify(getEl(hit)));updateProps();return;
+      }
+    }
+    // Otherwise normal polygon drawing
+    if(S.polyPts.length>2){const fp=S.polyPts[0];if(Math.hypot(sx-fp.x,sy-fp.y)<20){closePoly();return;}}
+    S.polyPts.push({x:sx,y:sy});S.drawing=true;
+  } else if(S.tool==='repeater'){
+    // If clicking an existing repeater, drag it; otherwise place new
+    const existing=S.devices.find(d=>d.type==='repeater'&&hitDev(x,y,d));
+    if(existing){
+      pushHistory();
+      S.selId=existing.id;S.dragging=true;S.dragStart={x,y};
+      S.dragOrig={...existing};updateProps();
+    } else {
+      pushHistory();
+      const n=S.devices.filter(d=>d.type==='repeater').length;
+      const d={id:newId(),type:'repeater',label:`R${n}`,x:sx,y:sy};
+      S.devices.push(d);S.selId=d.id;updateProps();
+    }
+  } else if(S.tool==='north'){
+    // If clicking the existing north arrow, drag it; otherwise place/move it
+    const existing=S.devices.find(d=>d.type==='north'&&hitDev(x,y,d));
+    if(existing){
+      pushHistory();
+      S.selId=existing.id;S.dragging=true;S.dragStart={x,y};
+      S.dragOrig={...existing};updateProps();
+    } else {
+      pushHistory();
+      S.devices=S.devices.filter(d=>d.type!=='north');
+      const d={id:newId(),type:'north',x:sx,y:sy,dir:'Up'};
+      S.devices.push(d);S.selId=d.id;updateProps();
+    }
+  }
+});
+
+canvas.addEventListener('mousemove',e=>{
+  const{x,y}=xy(e);S.mx=x;S.my=y;
+  if(S.drawing){S.drawCur={x:snap(x),y:snap(y)};}
+  else if(S.dragging&&S.selId){
+    const dx=x-S.dragStart.x,dy=y-S.dragStart.y,o=S.dragOrig;
+    if(S.selId===FP_ID){S.fp.x=snap(o.x+dx);S.fp.y=snap(o.y+dy);}
+    else{
+      const el=getEl(S.selId);
+      if(el.type==='rect'){el.x=snap(o.x+dx);el.y=snap(o.y+dy);edgeSnap(el);}
+      else if(el.type==='poly'){
+        const ocx=o.pts.reduce((s,p)=>s+p.x,0)/o.pts.length,ocy=o.pts.reduce((s,p)=>s+p.y,0)/o.pts.length;
+        const ncx=snap(ocx+dx),ncy=snap(ocy+dy);
+        el.pts=o.pts.map(p=>({x:p.x+(ncx-ocx),y:p.y+(ncy-ocy)}));
+      } else {el.x=snap(o.x+dx);el.y=snap(o.y+dy);}
+    }
+  } else if(S.resizing){
+    const h=S.resizeH,o=S.resizeOrig,sx2=snap(x),sy2=snap(y);
+    if(S.selId===FP_ID){
+      // Aspect-ratio-locked corner resize
+      const ar=o.w/o.h;
+      if(h.cx===1&&h.cy===1){         // SE
+        const w=Math.max(20,sx2-o.x);S.fp.w=w;S.fp.h=Math.round(w/ar);
+      } else if(h.cx===1&&h.cy===-1){ // NE
+        const w=Math.max(20,sx2-o.x);const nh=Math.round(w/ar);S.fp.w=w;S.fp.h=nh;S.fp.y=o.y+o.h-nh;
+      } else if(h.cx===-1&&h.cy===1){ // SW
+        const w=Math.max(20,o.x+o.w-sx2);S.fp.w=w;S.fp.h=Math.round(w/ar);S.fp.x=o.x+o.w-w;
+      } else if(h.cx===-1&&h.cy===-1){// NW
+        const w=Math.max(20,o.x+o.w-sx2);const nh=Math.round(w/ar);S.fp.w=w;S.fp.h=nh;S.fp.x=o.x+o.w-w;S.fp.y=o.y+o.h-nh;
+      }
+    } else {
+      const el=getEl(S.selId);
+      if(h.cx===-1){el.x=Math.min(sx2,o.x+o.w-10);el.w=o.x+o.w-el.x;}
+      if(h.cx===1) el.w=Math.max(10,sx2-o.x);
+      if(h.cy===-1){el.y=Math.min(sy2,o.y+o.h-10);el.h=o.y+o.h-el.y;}
+      if(h.cy===1) el.h=Math.max(10,sy2-o.y);
+    }
+  }
+  updateCursor(x,y);
+});
+
+canvas.addEventListener('mouseup',()=>{
+  if(S.drawing&&S.tool==='rect'&&S.drawStart){
+    const zx=Math.min(S.drawStart.x,S.drawCur.x),zy=Math.min(S.drawStart.y,S.drawCur.y);
+    const zw=Math.abs(S.drawCur.x-S.drawStart.x),zh=Math.abs(S.drawCur.y-S.drawStart.y);
+    if(zw>10&&zh>10){
+      pushHistory();
+      const z={id:newId(),type:'rect',profile:S.profile,label:PROFILES[S.profile].short,x:zx,y:zy,w:zw,h:zh,fontSize:12,rotation:0};
+      S.zones.push(z);S.selId=z.id;updateProps();
+    }
+    S.drawing=false;S.drawStart=null;S.drawCur=null;
+  }
+  S.dragging=false;S.resizing=false;S.resizeH=null;
+  S.snapLinesX=[];S.snapLinesY=[];
+});
+
+canvas.addEventListener('dblclick',e=>{
+  const{x,y}=xy(e);
+  if(S.tool==='poly'&&S.polyPts.length>2){closePoly();return;}
+  if(S.tool==='select'){
+    const hit=hitAll(x,y);
+    if(hit&&hit!==FP_ID){const el=getEl(hit);if(el?.type==='rect'||el?.type==='poly') startEdit(el);}
+  }
+});
+
+canvas.addEventListener('contextmenu',e=>{e.preventDefault();if(S.tool==='poly'&&S.polyPts.length>2) closePoly();});
+
+function closePoly(){
+  if(S.polyPts.length<3) return;
+  pushHistory();
+  const z={id:newId(),type:'poly',profile:S.profile,label:PROFILES[S.profile].short,pts:[...S.polyPts],fontSize:12,rotation:0};
+  S.zones.push(z);S.selId=z.id;S.polyPts=[];S.drawing=false;S.drawCur=null;updateProps();
+}
+
+function updateCursor(x,y){
+  if(S.tool==='select'){
+    if(S.selId===FP_ID&&S.floorPlan){const h=fpCornerAt(x,y);if(h){canvas.style.cursor=h.cur;return;}}
+    if(S.selId&&S.selId!==FP_ID){const el=getEl(S.selId);if(el?.type==='rect'){const h=zHandleAt(x,y,el);if(h){canvas.style.cursor=h.cur;return;}}}
+    canvas.style.cursor=hitAll(x,y)?'move':'default';return;
+  }
+  if(S.tool==='rect'||S.tool==='poly'){
+    const hit=hitAll(x,y);
+    canvas.style.cursor=(hit&&hit!==FP_ID&&!S.drawing)?'move':'crosshair';return;
+  }
+  if(S.tool==='repeater'){
+    canvas.style.cursor=S.devices.find(d=>d.type==='repeater'&&hitDev(x,y,d))?'move':'crosshair';return;
+  }
+  if(S.tool==='north'){
+    canvas.style.cursor=S.devices.find(d=>d.type==='north'&&hitDev(x,y,d))?'move':'crosshair';return;
+  }
+  canvas.style.cursor='crosshair';
+}
+
+/* ================================================================
+   LABEL EDITING
+================================================================ */
+function startEdit(el){
+  labelInput.value=el.label||'';
+  const r=canvas.getBoundingClientRect(),sx=r.width/CW,sy=r.height/CH;
+  let cx,cy;
+  if(el.type==='rect'){cx=(el.x+el.w/2)*sx+r.left;cy=(el.y+el.h/2)*sy+r.top;}
+  else{cx=(el.pts.reduce((s,p)=>s+p.x,0)/el.pts.length)*sx+r.left;cy=(el.pts.reduce((s,p)=>s+p.y,0)/el.pts.length)*sy+r.top;}
+  labelInput.style.left=(cx-65)+'px';labelInput.style.top=(cy-14)+'px';
+  labelInput.style.display='block';labelInput.focus();labelInput.select();
+  const done=()=>{el.label=labelInput.value.toUpperCase();labelInput.style.display='none';updateProps();labelInput.removeEventListener('blur',done);labelInput.removeEventListener('keydown',onKey);};
+  const onKey=e=>{if(e.key==='Enter'||e.key==='Escape')done();};
+  labelInput.addEventListener('blur',done);labelInput.addEventListener('keydown',onKey);
+}
+
+/* ================================================================
+   PROPERTIES PANEL
+================================================================ */
+function updateProps(){
+  const p=document.getElementById('propsPanel');
+  if(!S.selId){p.innerHTML=`<div class="no-sel"><div class="no-sel-icon">⬜</div><p>Select an element<br>to edit properties<br><br><span style="font-size:10px;color:var(--muted)">Shift+click to<br>multi-select for merge</span></p></div>`;return;}
+
+  // Multi-select: 2+ zones — show merge panel
+  if(S.selIds.size>=2){
+    const selectedZones=[...S.selIds].map(id=>S.zones.find(z=>z.id===id)).filter(Boolean);
+    const allRects=selectedZones.every(z=>z.type==='rect');
+    p.innerHTML=`
+      <div class="prop-title">${S.selIds.size} Zones Selected</div>
+      <div class="prop-info">${selectedZones.map(z=>z.label||'—').join(', ')}</div>
+      <p style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.5">${allRects?'Merge removes interior walls and combines into one polygon zone.':'Only rectangle zones can be merged. Deselect polygon zones to proceed.'}</p>
+      ${allRects?`<button class="prop-btn" id="pMerge" style="border-color:var(--accent);color:var(--accent);font-weight:600">⊕ Merge Zones</button>`:''}
+      <button class="prop-btn" id="pClearSel" style="margin-top:6px">Clear Selection</button>`;
+    if(allRects) document.getElementById('pMerge').onclick=()=>mergeSelected();
+    document.getElementById('pClearSel').onclick=()=>{S.selId=null;S.selIds=new Set();updateProps();};
+    return;
+  }
+
+  if(S.selId===FP_ID){
+    p.innerHTML=`
+      <div class="prop-title">Floor Plan</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+        <div class="prop-row" style="margin:0"><label>X</label><input id="pFpX" class="prop-input" type="number" value="${Math.round(S.fp.x)}"></div>
+        <div class="prop-row" style="margin:0"><label>Y</label><input id="pFpY" class="prop-input" type="number" value="${Math.round(S.fp.y)}"></div>
+        <div class="prop-row" style="margin:0"><label>W</label><input id="pFpW" class="prop-input" type="number" value="${Math.round(S.fp.w)}" min="20"></div>
+        <div class="prop-row" style="margin:0"><label>H</label><input id="pFpH" class="prop-input" type="number" value="${Math.round(S.fp.h)}" min="20"></div>
+      </div>
+      <p style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.5">${S.fpLocked?'🔒 Locked — unlock in sidebar to edit.':'Drag to move · Drag corners to resize'}</p>
+      <button class="prop-btn" id="pFpReset">Reset to Full Canvas</button>
+      <button class="prop-del" id="pFpRemove">Remove Floor Plan</button>`;
+    const fpAr=S.fp.w/S.fp.h;
+    document.getElementById('pFpX').oninput=e=>{S.fp.x=parseFloat(e.target.value)||0;};
+    document.getElementById('pFpY').oninput=e=>{S.fp.y=parseFloat(e.target.value)||0;};
+    document.getElementById('pFpW').oninput=e=>{const w=Math.max(20,parseFloat(e.target.value)||20);S.fp.w=w;S.fp.h=Math.round(w/fpAr);document.getElementById('pFpH').value=Math.round(S.fp.h);};
+    document.getElementById('pFpH').oninput=e=>{const h=Math.max(20,parseFloat(e.target.value)||20);S.fp.h=h;S.fp.w=Math.round(h*fpAr);document.getElementById('pFpW').value=Math.round(S.fp.w);};
+    document.getElementById('pFpReset').onclick=()=>{S.fp={x:0,y:0,w:CW,h:CH};updateProps();};
+    document.getElementById('pFpRemove').onclick=()=>{S.floorPlan=null;S.fp={x:0,y:0,w:CW,h:CH};S.selId=null;updateProps();};
+    return;
+  }
+
+  const el=getEl(S.selId);if(!el) return;
+
+  if(el.type==='rect'||el.type==='poly'){
+    const fs=el.fontSize||12, rot=el.rotation||0;
+    p.innerHTML=`
+      <div class="prop-title">${el.type==='rect'?'Rectangle':'Polygon'} Zone</div>
+      <div class="prop-row"><label>Label</label><input id="pLabel" class="prop-input" type="text" value="${el.label||''}"></div>
+      <div class="prop-row"><label>Temperature Profile</label>
+        <select id="pProfile" class="prop-select">${Object.keys(PROFILES).map(k=>`<option value="${k}"${k===el.profile?' selected':''}>${k}</option>`).join('')}</select>
+      </div>
+      <div class="prop-color" id="pColor" style="background:${PROFILES[el.profile]?.color}"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div class="prop-row" style="margin:0">
+          <label>Font Size</label>
+          <input id="pFontSize" class="prop-input" type="number" value="${fs}" min="7" max="24">
+        </div>
+        <div class="prop-row" style="margin:0">
+          <label>Rotation</label>
+          <div style="display:flex;gap:4px;margin-top:4px">
+            <button id="pRotH" class="prop-btn" style="flex:1;margin:0;padding:5px 0;font-size:11px;${rot===0?'border-color:var(--accent);color:var(--accent);background:var(--accent-a)':''}">H</button>
+            <button id="pRotV" class="prop-btn" style="flex:1;margin:0;padding:5px 0;font-size:11px;${rot===90?'border-color:var(--accent);color:var(--accent);background:var(--accent-a)':''}">V</button>
+          </div>
+        </div>
+      </div>
+      <button class="prop-del" id="pDel">Delete Zone</button>`;
+    document.getElementById('pLabel').oninput=e=>{el.label=e.target.value.toUpperCase();};
+    document.getElementById('pProfile').onchange=e=>{pushHistory();el.profile=e.target.value;document.getElementById('pColor').style.background=PROFILES[e.target.value]?.color;};
+    document.getElementById('pFontSize').oninput=e=>{el.fontSize=Math.max(7,Math.min(24,parseInt(e.target.value)||12));};
+    document.getElementById('pRotH').onclick=()=>{pushHistory();el.rotation=0;updateProps();};
+    document.getElementById('pRotV').onclick=()=>{pushHistory();el.rotation=90;updateProps();};
+    document.getElementById('pDel').onclick=()=>removeEl(el.id);
+  } else if(el.type==='repeater'){
+    p.innerHTML=`
+      <div class="prop-title">Repeater Marker</div>
+      <div class="prop-row"><label>Label</label><input id="pLabel" class="prop-input" type="text" value="${el.label||''}"></div>
+      <button class="prop-del" id="pDel">Delete Repeater</button>`;
+    document.getElementById('pLabel').oninput=e=>{el.label=e.target.value.toUpperCase();};
+    document.getElementById('pDel').onclick=()=>removeEl(el.id);
+  } else if(el.type==='north'){
+    p.innerHTML=`
+      <div class="prop-title">North Arrow</div>
+      <div class="prop-row"><label>Direction</label>
+        <select id="pDir" class="prop-select">${['Up','Down','Left','Right'].map(d=>`<option value="${d}"${d===el.dir?' selected':''}>${d}</option>`).join('')}</select>
+      </div>
+      <button class="prop-del" id="pDel">Delete Arrow</button>`;
+    document.getElementById('pDir').onchange=e=>{el.dir=e.target.value;};
+    document.getElementById('pDel').onclick=()=>removeEl(el.id);
+  }
+}
+
+/* ================================================================
+   KEYBOARD
+================================================================ */
+document.addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();return;}
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveProject(false);return;}
+  if((e.key==='Delete'||e.key==='Backspace')&&S.selId&&S.selId!==FP_ID) removeEl(S.selId);
+  if(e.key==='Escape'){
+    if(S.tool==='poly'){S.polyPts=[];S.drawing=false;S.drawCur=null;}
+    S.selId=null;S.selIds=new Set();updateProps();
+  }
+  const map={v:'select',r:'rect',p:'poly',t:'repeater',n:'north'};
+  const t=map[e.key.toLowerCase()];if(t) setTool(t);
+});
+
+function setTool(t){
+  if(S.tool==='poly'){S.polyPts=[];S.drawing=false;S.drawCur=null;}
+  S.tool=t;
+  document.querySelectorAll('.tool-btn').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));
+}
+
+/* ================================================================
+   FILE UPLOAD
+================================================================ */
+document.getElementById('btnUpload').onclick=()=>document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange=e=>{
+  const f=e.target.files[0];if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      S.floorPlan=img;
+      // Fit to canvas maintaining aspect ratio, centered
+      const ar=img.width/img.height, cvAr=CW/CH;
+      let w,h;
+      if(ar>cvAr){w=CW;h=Math.round(CW/ar);}
+      else{h=CH;w=Math.round(CH*ar);}
+      S.fp={x:Math.round((CW-w)/2),y:Math.round((CH-h)/2),w,h};
+    };
+    img.src=ev.target.result;
+  };
+  r.readAsDataURL(f);e.target.value='';
+};
+
+/* ================================================================
+   AI DETECTION
+================================================================ */
+document.getElementById('btnAI').onclick=async()=>{
+  if(!S.floorPlan){alert('Please upload a floor plan first.');return;}
+  let key=S.apiKey;
+  if(!key){key=prompt('Enter your Anthropic API key:\n(Stored locally in your browser)');if(!key) return;S.apiKey=key;localStorage.setItem('fm_key',key);}
+  const tmp=document.createElement('canvas');tmp.width=CW;tmp.height=CH;
+  const tc=tmp.getContext('2d');tc.fillStyle='#fff';tc.fillRect(0,0,CW,CH);
+  tc.drawImage(S.floorPlan,S.fp.x,S.fp.y,S.fp.w,S.fp.h);
+  const img64=tmp.toDataURL('image/jpeg',.85).split(',')[1];
+  document.getElementById('aiOverlay').classList.add('show');
+  document.getElementById('btnAI').disabled=true;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4096,messages:[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:'image/jpeg',data:img64}},
+        {type:'text',text:`Analyze this annotated facility floor plan. Identify all colored room/zone areas.
+For each zone: 1) Temperature profile from color: Beige/tan(#cdb79f)→"Office/Unmonitored", Yellow(#f7ce62)→"Dry", Blue(#64a3d8)→"Cooler", Purple(#c87ebf)→"Freezer", Teal(#84d0d0)→"Cool Dock", Red(#b85945)→"Produce/Warm Area". 2) Text label inside the zone. 3) Bounding box as decimal fractions: x_pct,y_pct,w_pct,h_pct.
+Return ONLY a JSON array: [{"profile":"Freezer","label":"FREEZER","x_pct":0.05,"y_pct":0.20,"w_pct":0.30,"h_pct":0.60}]`}
+      ]}]})
+    });
+    const data=await res.json();
+    if(data.error) throw new Error(data.error.message);
+    const text=data.content?.find(b=>b.type==='text')?.text||'';
+    const match=text.match(/\[[\s\S]*?\]/);
+    if(!match) throw new Error('No zones detected. Ensure floor plan has colored and labeled zones.');
+    const zones=JSON.parse(match[0]);let count=0;
+    for(const z of zones){
+      const profile=Object.keys(PROFILES).find(p=>p.toLowerCase()===z.profile?.toLowerCase())||'Dry';
+      const zone={id:newId(),type:'rect',profile,label:z.label||PROFILES[profile].short,x:Math.round(z.x_pct*CW),y:Math.round(z.y_pct*CH),w:Math.round(z.w_pct*CW),h:Math.round(z.h_pct*CH),fontSize:12,rotation:0};
+      if(zone.w>10&&zone.h>10){S.zones.push(zone);count++;}
+    }
+    document.getElementById('aiOverlay').classList.remove('show');
+    alert(`✓ ${count} zone${count!==1?'s':''} detected. Review and adjust as needed.`);
+  }catch(err){document.getElementById('aiOverlay').classList.remove('show');alert(`AI detection failed:\n${err.message}`);}
+  document.getElementById('btnAI').disabled=false;
+};
+
+/* ================================================================
+   SAVE / LOAD / EXPORT
+================================================================ */
+let _fileHandle = null; // persists across saves for overwrite
+
+function fpBase64(){
+  if(!S.floorPlan) return null;
+  const t=document.createElement('canvas');t.width=CW;t.height=CH;
+  t.getContext('2d').drawImage(S.floorPlan,0,0,CW,CH);
+  return t.toDataURL('image/jpeg',.65);
+}
+
+function buildProjectJSON(){
+  return JSON.stringify({
+    v:2,name:S.name,zones:S.zones,devices:S.devices,nextId:S._nid,
+    fpVisible:S.fpVisible,fpLocked:S.fpLocked,zonesVisible:S.zonesVisible,
+    fp:S.fp,floorPlan:fpBase64()
+  });
+}
+
+function updateSaveButton(){
+  const btn=document.getElementById('btnSave');
+  if(_fileHandle){
+    btn.textContent='Save';
+    btn.title=`Save (Ctrl+S) — overwrites "${_fileHandle.name}"`;
+    btn.style.borderColor='var(--accent)';btn.style.color='var(--accent)';
+  } else {
+    btn.textContent='Save';
+    btn.title='Save (Ctrl+S) — choose a file location';
+    btn.style.borderColor='';btn.style.color='';
+  }
+}
+
+async function saveToHandle(handle){
+  const writable=await handle.createWritable();
+  await writable.write(buildProjectJSON());
+  await writable.close();
+}
+
+async function saveProject(forceNew=false){
+  const opts={
+    suggestedName:`${S.name.replace(/\s+/g,'_')}.facilitymap`,
+    types:[{description:'FacilityMapper Project',accept:{'application/json':['.facilitymap','.json']}}],
+    ...(_fileHandle ? {startIn:_fileHandle} : {})
+  };
+  // Use File System Access API if available
+  if(window.showSaveFilePicker){
+    try{
+      if(forceNew||!_fileHandle){
+        _fileHandle=await window.showSaveFilePicker(opts);
+      }
+      await saveToHandle(_fileHandle);
+      updateSaveButton();
+    } catch(err){
+      if(err.name!=='AbortError') alert('Save failed:\n'+err.message);
+    }
+  } else {
+    // Fallback: classic blob download
+    const blob=new Blob([buildProjectJSON()],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download=`${S.name.replace(/\s+/g,'_')}.facilitymap`;a.click();
+  }
+}
+
+document.getElementById('btnSave').onclick=()=>saveProject(false);
+document.getElementById('btnSaveAs').onclick=()=>saveProject(true);
+
+document.getElementById('btnLoad').onclick=async()=>{
+  if(window.showOpenFilePicker){
+    try{
+      const [handle]=await window.showOpenFilePicker({
+        types:[{description:'FacilityMapper Project',accept:{'application/json':['.facilitymap','.json']}}]
+      });
+      const file=await handle.getFile();
+      const text=await file.text();
+      loadProjectJSON(text);
+      _fileHandle=handle; // subsequent saves overwrite this file
+      updateSaveButton();
+    } catch(err){if(err.name!=='AbortError') alert('Load failed:\n'+err.message);}
+  } else {
+    document.getElementById('projectInput').click();
+  }
+};
+
+function loadProjectJSON(text){
+  try{
+    const p=JSON.parse(text);
+    S.name=p.name||'Untitled';S.zones=p.zones||[];S.devices=p.devices||[];S._nid=p.nextId||1;
+    S.fpVisible=p.fpVisible!==undefined?p.fpVisible:true;
+    S.fpLocked=p.fpLocked||false;
+    S.zonesVisible=p.zonesVisible!==undefined?p.zonesVisible:true;
+    S.fp=p.fp||{x:0,y:0,w:CW,h:CH};
+    S.selId=null;S.selIds=new Set();
+    document.getElementById('projectName').value=S.name;
+    document.getElementById('fpToggle').checked=S.fpVisible;
+    document.getElementById('fpLockToggle').checked=S.fpLocked;
+    document.getElementById('zonesToggle').checked=S.zonesVisible;
+    updateProps();
+    if(p.floorPlan){const img=new Image();img.onload=()=>{S.floorPlan=img;};img.src=p.floorPlan;}
+  }catch(err){alert('Failed to load project:\n'+err.message);}
+}
+document.getElementById('projectInput').onchange=e=>{
+  const f=e.target.files[0];if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{loadProjectJSON(ev.target.result);_fileHandle=null;updateSaveButton();};
+  r.readAsText(f);e.target.value='';
+};
+
+document.getElementById('btnExport').onclick=()=>{
+  const exp=document.createElement('canvas');exp.width=CW;exp.height=CH;
+  const ec=exp.getContext('2d');
+  ec.fillStyle='#fff';ec.fillRect(0,0,CW,CH);
+  // Floor plan: respects fpVisible + current fp position/size
+  if(S.floorPlan&&S.fpVisible) ec.drawImage(S.floorPlan,S.fp.x,S.fp.y,S.fp.w,S.fp.h);
+  if(S.zonesVisible) renderAllZones(ec,S.zones,new Set());
+  S.devices.forEach(d=>{ec.save();if(d.type==='repeater') drawPin(ec,d.x,d.y,d.label,false);else if(d.type==='north') drawNorth(ec,d.x,d.y,d.dir,false);ec.restore();});
+  const a=document.createElement('a');a.href=exp.toDataURL('image/png');a.download=`${S.name.replace(/\s+/g,'_')}_map.png`;a.click();
+};
+
+/* ================================================================
+   INIT
+================================================================ */
+document.getElementById('projectName').oninput=e=>{S.name=e.target.value;};
+updateSaveButton();
+document.querySelectorAll('.tool-btn').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+document.getElementById('fpToggle').onchange=e=>{S.fpVisible=e.target.checked;};
+document.getElementById('fpLockToggle').onchange=e=>{S.fpLocked=e.target.checked;if(S.selId===FP_ID){S.selId=null;updateProps();}};
+document.getElementById('zonesToggle').onchange=e=>{S.zonesVisible=e.target.checked;};
+document.getElementById('gridToggle').onchange=e=>{S.grid=e.target.checked;};
+document.getElementById('gridSize').oninput=e=>{S.gridSize=parseInt(e.target.value)||20;};
+
+const psw=document.getElementById('profileSwatches');
+Object.entries(PROFILES).forEach(([name,{color,short}])=>{
+  const el=document.createElement('div');el.className='p-swatch'+(name===S.profile?' active':'');
+  el.style.background=color;el.title=name;el.textContent=short;
+  el.onclick=()=>{S.profile=name;document.querySelectorAll('.p-swatch').forEach(s=>s.classList.remove('active'));el.classList.add('active');};
+  psw.appendChild(el);
+});
+
+const leg=document.getElementById('legendItems');
+Object.entries(PROFILES).forEach(([name,{color}])=>{
+  const el=document.createElement('div');el.className='legend-item';
+  el.innerHTML=`<div class="legend-dot" style="background:${color}"></div><span>${name}</span>`;
+  leg.appendChild(el);
+});
+
+updateProps();
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
