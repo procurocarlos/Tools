@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PNG Card Generator · OpsBee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#FFB900;
+  --bg:#111113;
+  --s1:#1A1A1C;
+  --s2:#222224;
+  --b1:#2E2E30;
+  --b2:#3F3F46;
+  --tx:#E4E4E7;
+  --mu:#A1A1AA;
+  --di:#8C8C99;
+  --danger:#F87171;
+}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;padding:28px;font-size:13px;line-height:1.4}
+.app{max-width:960px;margin:0 auto}
+
+/* Header */
+.hdr{display:flex;align-items:baseline;gap:10px;margin-bottom:24px}
+h1{font-size:17px;font-weight:600;color:var(--gold);letter-spacing:-.02em}
+.hdr-sub{font-size:11px;color:var(--di)}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;background:var(--s1);border-radius:8px;padding:3px;width:fit-content;margin-bottom:14px}
+.tab{padding:5px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:500;font-family:inherit;background:transparent;color:var(--di);transition:all .12s}
+.tab.on{background:var(--s2);color:var(--tx)}
+
+/* Entry table */
+.tbl{background:var(--s1);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.tbl-head{display:grid;grid-template-columns:24px 190px 1fr 30px;gap:12px;padding:8px 14px;border-bottom:1px solid var(--s2);font-size:10px;font-weight:600;color:var(--di);text-transform:uppercase;letter-spacing:.07em}
+.tbl-row{display:grid;grid-template-columns:24px 190px 1fr 30px;gap:12px;padding:9px 14px;align-items:start}
+.tbl-row+.tbl-row{border-top:1px solid var(--s2)}
+.row-n{font-size:11px;color:var(--mu);padding-top:7px}
+.cat-wrap{display:flex;align-items:center;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:2px}
+
+select,textarea{width:100%;background:var(--s2);border:1px solid var(--b1);color:var(--tx);border-radius:6px;padding:5px 8px;font-size:12px;font-family:inherit;outline:none;transition:border-color .15s}
+select:focus,textarea:focus{border-color:var(--gold)}
+textarea{resize:none;line-height:1.5;overflow:hidden;min-height:32px}
+select{cursor:pointer}
+
+.icon-btn{background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:color .12s;padding:6px 4px}
+.icon-btn:disabled{opacity:.25;cursor:not-allowed}
+.icon-btn.danger:hover:not(:disabled){color:var(--danger)}
+.icon-btn{color:var(--di)}
+
+/* Toolbar */
+.toolbar{display:flex;gap:8px;align-items:center}
+.ghost-btn{display:flex;align-items:center;gap:6px;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-family:inherit;transition:all .12s;background:none}
+.add-btn{border:1px dashed var(--b1);color:var(--di)}
+.add-btn:hover{border-color:var(--b2);color:var(--tx)}
+.clear-btn{border:1px solid var(--b1);color:var(--di)}
+.clear-btn:hover{border-color:var(--danger);color:var(--danger)}
+
+/* Bulk */
+.bulk-hint{font-size:12px;color:var(--di);margin-bottom:8px}
+code{font-family:monospace;color:var(--mu);background:var(--s1);padding:1px 6px;border-radius:4px;font-size:11px}
+#bulk-ta{min-height:160px;overflow:auto;font-family:'JetBrains Mono','Courier New',monospace;font-size:12px;line-height:1.7;resize:vertical}
+.parse-btn{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--b1);color:var(--tx);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:12px;font-family:inherit;margin-top:8px}
+.parse-btn:disabled{color:var(--di);cursor:not-allowed}
+
+/* Divider */
+.div{border-top:1px solid var(--s2);margin:22px 0}
+
+/* Preview header */
+.prev-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px}
+.prev-left{display:flex;align-items:center;gap:12px}
+.prev-count{font-size:12px;font-weight:500;color:var(--di)}
+.sel-all{font-size:11px;color:var(--mu);background:none;border:none;cursor:pointer;font-family:inherit;padding:0;text-decoration:underline;text-underline-offset:2px}
+.exp-btn{display:flex;align-items:center;gap:8px;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .12s}
+.exp-btn:not(:disabled){background:var(--gold);color:#1A1A1A}
+.exp-btn:disabled{background:var(--s2);color:var(--di);cursor:not-allowed}
+
+/* Preview grid */
+.prev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.prev-card{background:var(--s1);border-radius:10px;overflow:hidden;border:1.5px solid var(--s2);transition:border-color .15s;user-select:none}
+.prev-card.on{border-color:var(--gold)}
+.canvas-wrap{position:relative;cursor:pointer}
+.prev-cv{display:block;width:100%;height:auto;background:#EFEFF0}
+.cb-wrap{position:absolute;top:8px;left:8px;line-height:0;pointer-events:none}
+.prev-cb{width:16px;height:16px;accent-color:var(--gold);pointer-events:all;cursor:pointer}
+.prev-footer{padding:8px 12px;display:flex;align-items:center;gap:8px}
+.prev-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.prev-lbl{font-size:11px;color:var(--di);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.empty{text-align:center;padding:48px 0;color:var(--b1);font-size:13px}
+.hidden{display:none!important}
+
+/* Inline SVG icons inherit color */
+svg{display:block;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="hdr">
+    <h1>PNG Card Generator</h1>
+    <span class="hdr-sub">1280 × 720 · OpsBee</span>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab on" data-tab="manual">Manual</button>
+    <button class="tab" data-tab="bulk">Bulk import</button>
+  </div>
+
+  <!-- Manual panel -->
+  <div id="manual-panel">
+    <div class="tbl">
+      <div class="tbl-head">
+        <span>#</span><span>Category</span><span>Subtitle</span><span></span>
+      </div>
+      <div id="rows"></div>
+    </div>
+    <div class="toolbar">
+      <button class="ghost-btn add-btn" id="add-btn">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5v10M1.5 6.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Add entry
+      </button>
+      <button class="ghost-btn clear-btn" id="clear-btn">Clear all</button>
+    </div>
+  </div>
+
+  <!-- Bulk panel -->
+  <div id="bulk-panel" class="hidden">
+    <p class="bulk-hint">
+      One per line: <code>Category, Subtitle</code>
+      &nbsp;·&nbsp; Use <code>\n</code> for a second subtitle line
+    </p>
+    <textarea id="bulk-ta" rows="8"
+      placeholder="OpsBee, Morning Checklist&#10;Ops Tablet, Shift Report&#10;Basic Prep, Fryer Setup&#10;Crew Engagement Dashboard, Weekly Goals&#10;OpsBee, Line One\nLine Two"></textarea>
+    <button class="parse-btn" id="parse-btn" disabled>
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5v10M1.5 6.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Parse & add
+    </button>
+  </div>
+
+  <div class="div"></div>
+
+  <!-- Preview header -->
+  <div class="prev-hdr">
+    <div class="prev-left">
+      <span class="prev-count" id="count">0 cards ready</span>
+      <button class="sel-all" id="sel-all">Select all</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="ghost-btn" id="folder-btn" style="border:1px solid var(--b1);color:var(--mu);font-size:12px;" title="Choose a specific folder to save into">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1.5 3.5h4l1 1.5h5v6h-10z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        Save to folder…
+      </button>
+      <button class="exp-btn" id="exp-btn" disabled>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M1 10.5v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Export PNGs
+      </button>
+    </div>
+  </div>
+
+  <div id="grid" class="prev-grid"></div>
+  <div id="empty" class="empty">Add entries above to preview cards</div>
+
+</div><!-- /.app -->
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const CATS = [
+  { id: 'opsbee', label: 'opsbee',                   color: '#FFB900' },
+  { id: 'tablet', label: 'Ops Tablet',                color: '#32D583' },
+  { id: 'ced',    label: 'Crew Engagement Dashboard', color: '#36BFFA' },
+  { id: 'prep',   label: 'Basic Prep',                color: '#BDB4FE' },
+];
+
+const CW = 1280, CH = 720;
+const CARD_BG = '#EFEFF0', CARD_FG = '#1A1A1A';
+const TITLE_PX = 63, BADGE_PX = 70, LINE_H = 88, GAP = 32, PAD_X = 56, PAD_Y = 26;
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let entries = [], nid = 0;
+const mkE = () => ({ id: nid++, catId: 'opsbee', subtitle: '', selected: true });
+const catOf = id => CATS.find(c => c.id === id) || CATS[0];
+
+// ── Canvas utilities ──────────────────────────────────────────────────────────
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+let fontReady = false;
+async function ensureFonts() {
+  if (fontReady) return;
+  try {
+    await Promise.all([
+      document.fonts.load('700 72px Inter'),
+      document.fonts.load('700 52px Inter'),
+    ]);
+  } catch (_) {}
+  fontReady = true;
+}
+
+async function makeCard(catId, subtitle) {
+  await ensureFonts();
+  const cat = catOf(catId);
+  const cv = document.createElement('canvas');
+  cv.width = CW; cv.height = CH;
+  const ctx = cv.getContext('2d');
+
+  // Background
+  ctx.fillStyle = CARD_BG;
+  ctx.fillRect(0, 0, CW, CH);
+
+  const lines = subtitle.split('\n');
+
+  // Measure badge width
+  ctx.font = `700 ${BADGE_PX}px Inter, sans-serif`;
+  const maxLineW = Math.max(...lines.map(l => ctx.measureText(l).width), 240 - PAD_X * 2);
+  const bw = maxLineW + PAD_X * 2;
+  const bh = lines.length * LINE_H + PAD_Y * 2;
+
+  // Vertically center the whole block
+  const totalH = TITLE_PX + GAP + bh;
+  const startY = (CH - totalH) / 2;
+  const titleY = startY + TITLE_PX / 2;
+  const badgeY = startY + TITLE_PX + GAP;
+
+  // Draw title
+  ctx.fillStyle = CARD_FG;
+  ctx.font = `700 ${TITLE_PX}px Inter, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(cat.label, CW / 2, titleY);
+
+  // Draw badge
+  const bx = CW / 2 - bw / 2;
+  ctx.fillStyle = cat.color;
+  roundRect(ctx, bx, badgeY, bw, bh, 12);
+  ctx.fill();
+
+  // Draw badge text lines
+  ctx.fillStyle = CARD_FG;
+  ctx.font = `700 ${BADGE_PX}px Inter, sans-serif`;
+  lines.forEach((line, i) => {
+    ctx.fillText(line, CW / 2, badgeY + PAD_Y + LINE_H * i + LINE_H / 2);
+  });
+
+  return cv;
+}
+
+// ── Preview canvas cache ──────────────────────────────────────────────────────
+// Caches canvas elements so they survive grid re-renders
+const pCache  = new Map(); // id → { cv, catId, subtitle }
+const pTimers = new Map(); // id → timerId
+
+function schedulePreview(entry) {
+  if (pTimers.has(entry.id)) clearTimeout(pTimers.get(entry.id));
+  const t = setTimeout(async () => {
+    pTimers.delete(entry.id);
+    const cached = pCache.get(entry.id);
+    if (!cached) return;
+    const full = await makeCard(entry.catId, entry.subtitle);
+    if (!cached.cv.isConnected) return; // was removed from DOM, skip
+    const ctx = cached.cv.getContext('2d');
+    ctx.clearRect(0, 0, 384, 216);
+    ctx.drawImage(full, 0, 0, 384, 216);
+  }, 280);
+  pTimers.set(entry.id, t);
+}
+
+function getPreviewCanvas(entry) {
+  const cached = pCache.get(entry.id);
+  if (cached) {
+    if (cached.catId !== entry.catId || cached.subtitle !== entry.subtitle) {
+      cached.catId = entry.catId;
+      cached.subtitle = entry.subtitle;
+      schedulePreview(entry);
+    }
+    return cached.cv;
+  }
+  const cv = document.createElement('canvas');
+  cv.className = 'prev-cv';
+  cv.width = 384; cv.height = 216;
+  pCache.set(entry.id, { cv, catId: entry.catId, subtitle: entry.subtitle });
+  schedulePreview(entry);
+  return cv;
+}
+
+function purgeEntry(id) {
+  if (pTimers.has(id)) { clearTimeout(pTimers.get(id)); pTimers.delete(id); }
+  pCache.delete(id);
+}
+
+// ── DOM helpers ───────────────────────────────────────────────────────────────
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function autoResize(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
+
+const TRASH_SVG = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+  <path d="M2 3.5h9M5 3.5V2.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v1M5.5 6v4M7.5 6v4
+    M3 3.5l.5 7a.5.5 0 00.5.5h5a.5.5 0 00.5-.5l.5-7"
+    stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+const PLUS_SVG = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+  <path d="M6.5 1.5v10M1.5 6.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>`;
+
+const DL_SVG = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+  <path d="M7 1v8M4 6l3 3 3-3M1 10.5v1a1 1 0 001 1h10a1 1 0 001-1v-1"
+    stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+// ── Render entry rows ─────────────────────────────────────────────────────────
+function renderRows() {
+  const box = document.getElementById('rows');
+  box.innerHTML = '';
+
+  entries.forEach((e, idx) => {
+    const row = document.createElement('div');
+    row.className = 'tbl-row';
+    row.dataset.id = e.id;
+
+    const selOpts = CATS.map(c =>
+      `<option value="${c.id}"${c.id === e.catId ? ' selected' : ''}>${c.label}</option>`
+    ).join('');
+
+    row.innerHTML = `
+      <span class="row-n">${idx + 1}</span>
+      <div class="cat-wrap">
+        <div class="dot" style="background:${catOf(e.catId).color}"></div>
+        <select class="rsel">${selOpts}</select>
+      </div>
+      <textarea class="rta" rows="1"
+        placeholder="Subtitle… (Enter for 2nd line)"></textarea>
+      <button class="icon-btn danger del-btn"${entries.length === 1 ? ' disabled' : ''}
+        title="Remove">${TRASH_SVG}</button>
+    `;
+
+    // Set textarea value directly (avoids HTML entity encoding issues)
+    const ta = row.querySelector('.rta');
+    ta.value = e.subtitle;
+    autoResize(ta);
+
+    ta.addEventListener('input', () => {
+      autoResize(ta);
+      e.subtitle = ta.value;
+      updatePreview(e.id);
+      upUI();
+    });
+
+    const sel = row.querySelector('.rsel');
+    sel.addEventListener('change', () => {
+      e.catId = sel.value;
+      row.querySelector('.dot').style.background = catOf(e.catId).color;
+      updatePreview(e.id);
+      upUI();
+    });
+
+    row.querySelector('.del-btn').addEventListener('click', () => {
+      if (entries.length <= 1) return;
+      purgeEntry(e.id);
+      entries = entries.filter(r => r.id !== e.id);
+      renderRows();
+      fullRenderPreviews();
+      upUI();
+    });
+
+    box.appendChild(row);
+  });
+}
+
+// ── Build a single preview card element ───────────────────────────────────────
+function buildCard(entry) {
+  const cat = catOf(entry.catId);
+  const cv  = getPreviewCanvas(entry);
+  const lbl = entry.subtitle.replace(/\n/g, ' · ');
+
+  const card = document.createElement('div');
+  card.className = 'prev-card' + (entry.selected ? ' on' : '');
+  card.dataset.id = entry.id;
+
+  // Canvas wrapper + checkbox overlay
+  const wrap = document.createElement('div');
+  wrap.className = 'canvas-wrap';
+  wrap.appendChild(cv);
+
+  const cbLabel = document.createElement('label');
+  cbLabel.className = 'cb-wrap';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.className = 'prev-cb';
+  cb.checked = entry.selected;
+  cbLabel.appendChild(cb);
+  wrap.appendChild(cbLabel);
+
+  // Toggle selection on checkbox change
+  cb.addEventListener('change', ev => {
+    ev.stopPropagation();
+    entry.selected = cb.checked;
+    card.classList.toggle('on', cb.checked);
+    upUI();
+  });
+
+  // Clicking the canvas area also toggles
+  wrap.addEventListener('click', ev => {
+    if (ev.target === cb) return;
+    cb.checked = !cb.checked;
+    entry.selected = cb.checked;
+    card.classList.toggle('on', cb.checked);
+    upUI();
+  });
+
+  const footer = document.createElement('div');
+  footer.className = 'prev-footer';
+  footer.innerHTML = `
+    <div class="prev-dot" style="background:${cat.color}"></div>
+    <span class="prev-lbl">${esc(cat.label)} · ${esc(lbl)}</span>
+  `;
+
+  card.appendChild(wrap);
+  card.appendChild(footer);
+  return card;
+}
+
+// ── Full grid re-render (structural changes) ──────────────────────────────────
+function fullRenderPreviews() {
+  const grid  = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  const valid = entries.filter(e => e.subtitle.trim());
+
+  grid.innerHTML = ''; // detaches canvas els; pCache keeps them alive
+
+  if (!valid.length) {
+    empty.classList.remove('hidden');
+    upUI();
+    return;
+  }
+
+  empty.classList.add('hidden');
+  valid.forEach(e => grid.appendChild(buildCard(e)));
+  upUI();
+}
+
+// ── Targeted update for a single preview card (data changes) ─────────────────
+function updatePreview(id) {
+  const entry  = entries.find(x => x.id === id);
+  const grid   = document.getElementById('grid');
+  const empty  = document.getElementById('empty');
+  const valid  = entries.filter(x => x.subtitle.trim());
+
+  if (!entry || !entry.subtitle.trim()) {
+    grid.querySelector(`.prev-card[data-id="${id}"]`)?.remove();
+    if (!grid.querySelector('.prev-card')) empty.classList.remove('hidden');
+    upUI();
+    return;
+  }
+
+  empty.classList.add('hidden');
+  getPreviewCanvas(entry); // triggers re-render if data changed
+
+  const existing = grid.querySelector(`.prev-card[data-id="${id}"]`);
+  if (!existing) {
+    grid.appendChild(buildCard(entry));
+  } else {
+    // Cheap footer update — canvas re-renders via debounced timer
+    const cat = catOf(entry.catId);
+    const lbl = entry.subtitle.replace(/\n/g, ' · ');
+    existing.querySelector('.prev-dot').style.background = cat.color;
+    existing.querySelector('.prev-lbl').textContent = `${cat.label} · ${lbl}`;
+  }
+  upUI();
+}
+
+// ── UI state sync (counts, export button) ─────────────────────────────────────
+function upUI() {
+  const valid = entries.filter(e => e.subtitle.trim());
+  const sel   = valid.filter(e => e.selected);
+
+  document.getElementById('count').textContent =
+    valid.length === 0
+      ? '0 cards ready'
+      : `${sel.length} of ${valid.length} selected`;
+
+  const btn = document.getElementById('exp-btn');
+  btn.disabled = !sel.length;
+  btn.innerHTML = `${DL_SVG} Export${sel.length ? ' ' + sel.length : ''} PNG${sel.length !== 1 ? 's' : ''}`;
+
+  const allSel = valid.length > 0 && valid.every(e => e.selected);
+  document.getElementById('sel-all').textContent = allSel ? 'Deselect all' : 'Select all';
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+function slugify(s) {
+  return s.replace(/\n/g, '_').toLowerCase().replace(/[^a-z0-9_]+/g, '-').replace(/^-|-$/g, '');
+}
+
+async function doExport(useFolder = false) {
+  const toExp = entries.filter(e => e.selected && e.subtitle.trim());
+  if (!toExp.length) return;
+
+  const btn    = document.getElementById('exp-btn');
+  const fldBtn = document.getElementById('folder-btn');
+  btn.disabled = true;
+  if (fldBtn) fldBtn.disabled = true;
+  btn.textContent = 'Downloading…';
+
+  const CHECK = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+  try {
+    if (useFolder && 'showDirectoryPicker' in window) {
+      // User explicitly chose "Save to folder…"
+      const dir = await window.showDirectoryPicker({ mode: 'readwrite', startIn: 'downloads' });
+      for (const e of toExp) {
+        const cv   = await makeCard(e.catId, e.subtitle);
+        const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+        const fh   = await dir.getFileHandle(`${e.catId}_${slugify(e.subtitle)}.png`, { create: true });
+        const wr   = await fh.createWritable();
+        await wr.write(blob); await wr.close();
+      }
+      btn.innerHTML = `${CHECK} Saved ${toExp.length} PNG${toExp.length !== 1 ? 's' : ''}`;
+    } else {
+      // Default: download straight to browser Downloads folder
+      for (const e of toExp) {
+        const cv   = await makeCard(e.catId, e.subtitle);
+        const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.download = `${e.catId}_${slugify(e.subtitle)}.png`;
+        a.href = url; a.click();
+        await new Promise(r => setTimeout(r, 400));
+        URL.revokeObjectURL(url);
+      }
+      btn.innerHTML = `${CHECK} Downloaded ${toExp.length} PNG${toExp.length !== 1 ? 's' : ''}`;
+    }
+    setTimeout(upUI, 2500);
+  } catch (err) {
+    if (err.name !== 'AbortError') alert('Export failed: ' + err.message);
+    upUI();
+  } finally {
+    if (fldBtn) fldBtn.disabled = false;
+  }
+}
+
+// ── Wire up events ────────────────────────────────────────────────────────────
+function init() {
+  entries = [mkE()];
+  renderRows();
+  fullRenderPreviews();
+  upUI();
+
+  // Tab switching
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      const isManual = btn.dataset.tab === 'manual';
+      document.getElementById('manual-panel').classList.toggle('hidden', !isManual);
+      document.getElementById('bulk-panel').classList.toggle('hidden', isManual);
+    });
+  });
+
+  // Add entry
+  document.getElementById('add-btn').addEventListener('click', () => {
+    entries.push(mkE());
+    renderRows();
+    upUI();
+  });
+
+  // Clear all
+  document.getElementById('clear-btn').addEventListener('click', () => {
+    if (!confirm('Clear all entries and start over?')) return;
+    [...pCache.keys()].forEach(id => purgeEntry(id));
+    entries = [mkE()];
+    renderRows();
+    fullRenderPreviews();
+    upUI();
+  });
+
+  // Select all / deselect all
+  document.getElementById('sel-all').addEventListener('click', () => {
+    const valid  = entries.filter(e => e.subtitle.trim());
+    const allSel = valid.every(e => e.selected);
+    valid.forEach(e => { e.selected = !allSel; });
+    document.querySelectorAll('.prev-card').forEach(card => {
+      const e = entries.find(x => x.id === Number(card.dataset.id));
+      if (!e) return;
+      card.querySelector('.prev-cb').checked = e.selected;
+      card.classList.toggle('on', e.selected);
+    });
+    upUI();
+  });
+
+  // Export (direct download)
+  document.getElementById('exp-btn').addEventListener('click', () => doExport(false));
+
+  // Save to folder (File System Access API)
+  const fldBtn = document.getElementById('folder-btn');
+  if ('showDirectoryPicker' in window) {
+    fldBtn.addEventListener('click', () => doExport(true));
+  } else {
+    fldBtn.style.display = 'none'; // hide if browser doesn't support it
+  }
+
+  // Bulk import
+  const bulkTa  = document.getElementById('bulk-ta');
+  const parseBtn = document.getElementById('parse-btn');
+
+  bulkTa.addEventListener('input', () => {
+    parseBtn.disabled = !bulkTa.value.trim();
+  });
+
+  parseBtn.addEventListener('click', () => {
+    const rows = bulkTa.value
+      .split('\n')
+      .filter(l => l.trim())
+      .reduce((acc, line) => {
+        const [head, ...rest] = line.split(',');
+        const subtitle = rest.join(',').trim().replace(/\\n/g, '\n');
+        if (!subtitle) return acc;
+        const q   = head.trim().toLowerCase();
+        const cat = CATS.find(c => c.label.toLowerCase().includes(q) || c.id.includes(q)) || CATS[0];
+        return [...acc, { id: nid++, catId: cat.id, subtitle, selected: true }];
+      }, []);
+
+    if (!rows.length) return;
+
+    // Keep existing entries unless it's the single blank default
+    const base = entries.length === 1 && !entries[0].subtitle ? [] : entries;
+    entries = [...base, ...rows];
+    bulkTa.value = '';
+    parseBtn.disabled = true;
+
+    // Switch to manual tab
+    document.querySelector('[data-tab="manual"]').click();
+    renderRows();
+    fullRenderPreviews();
+    upUI();
+  });
+}
+
+init();
+</script>
+</body>
+</html>
