@@ -176,7 +176,7 @@ svg{display:block;flex-shrink:0}
 const CATS = [
   { id: 'opsbee', label: 'opsbee',                   color: '#FFB900' },
   { id: 'tablet', label: 'Ops Tablet',                color: '#32D583' },
-  { id: 'ced',    label: 'Crew Engagement Dashboard', color: '#36BFFA' },
+  { id: 'ced',    label: 'Crew Engagement Dashboard', color: '#36BFFA', titleLines: ['Crew Engagement', 'Dashboard'] },
   { id: 'prep',   label: 'Basic Prep',                color: '#BDB4FE' },
 ];
 
@@ -215,6 +215,24 @@ async function ensureFonts() {
   fontReady = true;
 }
 
+// Word-wrap title to fit within maxWidth, returns array of lines
+function wrapTitle(ctx, text, maxWidth) {
+  const words = text.split(' ');
+  const lines = [];
+  let current = '';
+  for (const word of words) {
+    const test = current ? current + ' ' + word : word;
+    if (ctx.measureText(test).width > maxWidth && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = test;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
 async function makeCard(catId, subtitle) {
   await ensureFonts();
   const cat = catOf(catId);
@@ -226,26 +244,33 @@ async function makeCard(catId, subtitle) {
   ctx.fillStyle = CARD_BG;
   ctx.fillRect(0, 0, CW, CH);
 
-  const lines = subtitle.split('\n');
+  const subLines = subtitle.split('\n');
 
-  // Measure badge width
-  ctx.font = `700 ${BADGE_PX}px Gilroy, sans-serif`;
-  const maxLineW = Math.max(...lines.map(l => ctx.measureText(l).width), 240 - PAD_X * 2);
-  const bw = maxLineW + PAD_X * 2;
-  const bh = lines.length * LINE_H + PAD_Y * 2;
-
-  // Vertically center the whole block
-  const totalH = TITLE_PX + GAP + bh;
-  const startY = (CH - totalH) / 2;
-  const titleY = startY + TITLE_PX / 2;
-  const badgeY = startY + TITLE_PX + GAP;
-
-  // Draw title
-  ctx.fillStyle = CARD_FG;
+  // Wrap title if needed — max width is 80% of canvas
   ctx.font = `700 ${TITLE_PX}px Gilroy, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(cat.label, CW / 2, titleY);
+  const titleLines = cat.titleLines ? cat.titleLines : wrapTitle(ctx, cat.label, CW * 0.80);
+  const TITLE_LINE_H = Math.round(TITLE_PX * 1.25);
+  const titleBlockH = titleLines.length * TITLE_LINE_H;
+
+  // Measure badge width
+  ctx.font = `700 ${BADGE_PX}px Gilroy, sans-serif`;
+  const maxLineW = Math.max(...subLines.map(l => ctx.measureText(l).width), 240 - PAD_X * 2);
+  const bw = maxLineW + PAD_X * 2;
+  const bh = subLines.length * LINE_H + PAD_Y * 2;
+
+  // Vertically center the whole block
+  const totalH = titleBlockH + GAP + bh;
+  const startY = (CH - totalH) / 2;
+  const badgeY = startY + titleBlockH + GAP;
+
+  // Draw title (multi-line)
+  ctx.fillStyle = CARD_FG;
+  ctx.font = `700 ${TITLE_PX}px Gilroy, sans-serif`;
+  titleLines.forEach((line, i) => {
+    ctx.fillText(line, CW / 2, startY + TITLE_LINE_H * i + TITLE_LINE_H / 2);
+  });
 
   // Draw badge
   const bx = CW / 2 - bw / 2;
@@ -256,7 +281,7 @@ async function makeCard(catId, subtitle) {
   // Draw badge text lines
   ctx.fillStyle = CARD_FG;
   ctx.font = `700 ${BADGE_PX}px Gilroy, sans-serif`;
-  lines.forEach((line, i) => {
+  subLines.forEach((line, i) => {
     ctx.fillText(line, CW / 2, badgeY + PAD_Y + LINE_H * i + LINE_H / 2);
   });
 
