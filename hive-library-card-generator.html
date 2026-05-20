@@ -178,11 +178,12 @@ const CATS = [
   { id: 'tablet', label: 'Ops Tablet',                color: '#32D583' },
   { id: 'ced',    label: 'Crew Engagement Dashboard', color: '#36BFFA', titleLines: ['Crew Engagement', 'Dashboard'] },
   { id: 'prep',   label: 'Basic Prep',                color: '#BDB4FE' },
+  { id: 'hive',   label: 'The Hive',                  color: '#3A3A3A', textColor: '#FFFFFF' },
 ];
 
 const CW = 1280, CH = 720;
 const CARD_BG = '#EFEFF0', CARD_FG = '#1A1A1A';
-const TITLE_PX = 63, BADGE_PX = 70, LINE_H = 88, GAP = 32, PAD_X = 56, PAD_Y = 26;
+const TITLE_PX = 72, BADGE_PX = 80, LINE_H = 96, GAP = 16, PAD_X = 45, PAD_Y = 16;
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let entries = [], nid = 0;
@@ -251,7 +252,7 @@ async function makeCard(catId, subtitle) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   const titleLines = cat.titleLines ? cat.titleLines : wrapTitle(ctx, cat.label, CW * 0.80);
-  const TITLE_LINE_H = Math.round(TITLE_PX * 1.25);
+  const TITLE_LINE_H = 80; // matches Figma line-height
   const titleBlockH = titleLines.length * TITLE_LINE_H;
 
   // Measure badge width
@@ -279,7 +280,7 @@ async function makeCard(catId, subtitle) {
   ctx.fill();
 
   // Draw badge text lines
-  ctx.fillStyle = CARD_FG;
+  ctx.fillStyle = cat.textColor || CARD_FG;
   ctx.font = `700 ${BADGE_PX}px Gilroy, sans-serif`;
   subLines.forEach((line, i) => {
     ctx.fillText(line, CW / 2, badgeY + PAD_Y + LINE_H * i + LINE_H / 2);
