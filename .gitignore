@@ -1,0 +1,5 @@
+# Source files — keep off GitHub (encrypt before deploying)
+opsbee-version-checker-source.html
+
+# macOS
+.DS_Store
