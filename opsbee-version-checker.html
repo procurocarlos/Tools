@@ -154,6 +154,10 @@
     <span class="logo-text">Ops<span>Bee</span></span>
   </div>
   <span class="hdr-sub">· Version Report</span>
+  <a href="https://app.scalefusion.com/cloud/dashboard/apps/apple_app_store" target="_blank" class="sf-btn" style="text-decoration:none" title="Open App Store in Scalefusion">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    App Store
+  </a>
   <button class="sf-btn" onclick="openReinstall()" id="sf-btn" disabled title="Load data first">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
     <span id="sf-label">Reinstall selected</span>
@@ -459,6 +463,9 @@ function render() {
             <button class="copy-btn" title="Copy name" onclick="copyText(this,'${esc(r.d)}')">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
             </button>
+            ${r.sfId ? `<a href="https://app.scalefusion.com/cloud/dashboard/devices/${r.sfId}" target="_blank" class="copy-btn" title="Open in Scalefusion" style="text-decoration:none">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>` : ''}
           </div>
         </td>
         <td class="muted" title="${esc(r.g)}">${r.g}</td>
