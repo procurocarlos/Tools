@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpsBee · Version Report</title>
+<style>
+  :root {
+    --gold: #FCB816; --gold-light: #FEF3D0;
+    --gray-900: #2C2C2D; --gray-700: #4A4A4B; --gray-500: #6B6B6C;
+    --gray-300: #C8C8C9; --gray-100: #F5F5F5; --white: #FFFFFF;
+    --crit-bg: #FAECE7; --crit-text: #993C1D;
+    --stale-bg: #FAEEDA; --stale-text: #854F0B;
+    --behind-bg: #F1EFE8; --behind-text: #5F5E5A;
+    --minor-bg: #E6F1FB; --minor-text: #185FA5;
+    --green: #1D9E75;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --font: 'Helvetica Neue', Arial, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--gray-100); color: var(--gray-900); font-size: 13px; min-height: 100vh; }
+
+  /* Header */
+  header { background: var(--gray-900); padding: 0 24px; display: flex; align-items: center; gap: 12px; height: 52px; }
+  .logo { display: flex; align-items: center; gap: 8px; }
+  .logo-hex { width: 26px; height: 26px; }
+  .logo-text { color: var(--white); font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
+  .logo-text span { color: var(--gold); }
+  .hdr-sub { color: var(--gray-500); font-size: 12px; }
+  .sf-btn { margin-left: auto; background: transparent; border: 1px solid rgba(255,255,255,0.2); border-radius: var(--radius); padding: 6px 14px; color: var(--white); font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background .15s, opacity .15s; white-space: nowrap; }
+  .sf-btn:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
+  .sf-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .sf-btn svg { flex-shrink: 0; }
+
+  main { max-width: 1220px; margin: 0 auto; padding: 20px 24px; }
+
+  /* Upload */
+  .drop-zone { background: var(--white); border: 2px dashed var(--gray-300); border-radius: var(--radius); padding: 36px 24px; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; position: relative; }
+  .drop-zone:hover, .drop-zone.drag { border-color: var(--gold); background: var(--gold-light); }
+  .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .drop-zone .dz-icon { font-size: 28px; margin-bottom: 8px; }
+  .drop-zone .dz-label { font-size: 14px; font-weight: 600; color: var(--gray-700); margin-bottom: 4px; }
+  .drop-zone .dz-sub { font-size: 12px; color: var(--gray-500); }
+  .file-status { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; justify-content: center; }
+  .file-chip { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid var(--gray-300); background: var(--gray-100); color: var(--gray-500); }
+  .file-chip.ready { background: #F0FAF6; border-color: var(--green); color: var(--green); }
+  .file-chip.error { background: var(--crit-bg); border-color: var(--crit-text); color: var(--crit-text); }
+  .run-btn { margin-top: 16px; background: var(--gold); color: var(--gray-900); border: none; border-radius: var(--radius); padding: 10px 28px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+  .run-btn:hover { opacity: .85; }
+  .run-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+  /* Summary */
+  .summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; }
+  .sc { background: var(--white); border-radius: var(--radius); padding: 10px 12px; box-shadow: var(--shadow); }
+  .sc .lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-500); margin-bottom: 4px; }
+  .sc .val { font-size: 22px; font-weight: 700; }
+  .sc.crit { background: var(--crit-bg); } .sc.crit .val { color: var(--crit-text); }
+  .sc.stale { background: var(--stale-bg); } .sc.stale .val { color: var(--stale-text); }
+  .sc.minor { background: var(--minor-bg); } .sc.minor .val { color: var(--minor-text); }
+
+  /* Toolbar */
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+  .pill-group { display: flex; gap: 4px; flex-wrap: wrap; }
+  .pill { background: var(--white); border: 1px solid var(--gray-300); border-radius: 20px; padding: 5px 12px; font-size: 12px; cursor: pointer; transition: background .12s, border-color .12s; white-space: nowrap; }
+  .pill:hover { border-color: var(--gray-500); }
+  .pill.active { background: var(--gray-900); color: var(--white); border-color: var(--gray-900); }
+  .pill.active.crit { background: var(--crit-text); border-color: var(--crit-text); }
+  .pill.active.stale { background: var(--stale-text); border-color: var(--stale-text); }
+  .pill.active.minor { background: var(--minor-text); border-color: var(--minor-text); }
+  .sep { width: 1px; height: 20px; background: var(--gray-300); align-self: center; }
+  .search-wrap { flex: 1; min-width: 180px; position: relative; }
+  .search-wrap svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--gray-500); pointer-events: none; }
+  .search-wrap input { width: 100%; padding: 7px 10px 7px 30px; border: 1px solid var(--gray-300); border-radius: var(--radius); font-size: 12px; outline: none; }
+  .search-wrap input:focus { border-color: var(--gold); }
+  .toggle-row { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; flex-wrap: wrap; }
+  .tog { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gray-700); cursor: pointer; user-select: none; }
+  .tog input[type=checkbox] { accent-color: var(--gold); width: 14px; height: 14px; cursor: pointer; }
+  .sel-count { font-size: 11px; color: var(--gray-500); }
+
+  /* Table */
+  .table-wrap { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .scroll-body { max-height: 520px; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+  colgroup col.c-chk { width: 36px; }
+  colgroup col.c-dev { width: 28%; }
+  colgroup col.c-grp { width: 20%; }
+  colgroup col.c-ver { width: 8%; }
+  colgroup col.c-tier { width: 8%; }
+  colgroup col.c-upd { width: 18%; }
+  colgroup col.c-seen { width: 18%; }
+  thead { position: sticky; top: 0; z-index: 2; }
+  th { background: var(--gray-100); padding: 9px 8px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-500); cursor: pointer; user-select: none; white-space: nowrap; border-bottom: 1px solid var(--gray-300); }
+  th.no-sort { cursor: default; }
+  th:not(.no-sort):hover { color: var(--gray-900); }
+  th .arr { opacity: .3; margin-left: 3px; font-size: 10px; }
+  th.sorted .arr { opacity: 1; color: var(--gold); }
+  td { padding: 7px 8px; border-bottom: 1px solid #F0F0F0; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FAFAFA; }
+  tr.row-selected td { background: #FFFDF5; }
+
+  /* Device cell with inline copy */
+  .dev-cell { display: flex; align-items: center; gap: 4px; min-width: 0; }
+  .dev-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+  .copy-btn { flex-shrink: 0; background: none; border: none; cursor: pointer; padding: 2px 4px; border-radius: 4px; color: var(--gray-300); transition: color .12s, background .12s; display: inline-flex; align-items: center; opacity: 0; }
+  tr:hover .copy-btn, .copy-btn:focus { opacity: 1; color: var(--gray-500); }
+  .copy-btn:hover { color: var(--gray-900); background: var(--gray-100); }
+  .copy-btn.copied { opacity: 1; color: var(--green); }
+
+  /* Checkbox */
+  .row-chk { accent-color: var(--gold); width: 14px; height: 14px; cursor: pointer; display: block; margin: 0 auto; }
+  .hdr-chk { accent-color: var(--gold); width: 14px; height: 14px; cursor: pointer; }
+
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge.crit { background: var(--crit-bg); color: var(--crit-text); }
+  .badge.stale { background: var(--stale-bg); color: var(--stale-text); }
+  .badge.behind { background: var(--behind-bg); color: var(--behind-text); }
+  .badge.minor { background: var(--minor-bg); color: var(--minor-text); }
+  .seen-cell { display: flex; align-items: center; gap: 5px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .dot.online { background: var(--green); }
+  .dot.recent { background: #F0C040; }
+  .dot.offline { background: #D85A30; }
+  .dot.dark { background: var(--gray-300); }
+  .muted { color: var(--gray-500); }
+
+  /* Footer */
+  .foot { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 0; gap: 8px; flex-wrap: wrap; }
+  .foot-left { font-size: 11px; color: var(--gray-500); }
+  .export-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .exp-btn { background: var(--white); border: 1px solid var(--gray-300); border-radius: var(--radius); padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer; transition: background .12s; }
+  .exp-btn:hover { background: var(--gray-100); }
+
+  .empty { padding: 48px; text-align: center; color: var(--gray-500); }
+  .empty .ei { font-size: 28px; margin-bottom: 8px; }
+  .info-banner { background: var(--gold-light); border: 1px solid var(--gold); border-radius: var(--radius); padding: 9px 14px; font-size: 12px; color: var(--gray-700); margin-bottom: 10px; display: none; }
+  .err-banner { background: var(--crit-bg); border: 1px solid var(--crit-text); border-radius: var(--radius); padding: 9px 14px; font-size: 12px; color: var(--crit-text); margin-bottom: 10px; display: none; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(8px); background: var(--gray-900); color: var(--white); padding: 8px 16px; border-radius: 20px; font-size: 12px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 999; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  #results-section { display: none; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg class="logo-hex" viewBox="0 0 26 26" fill="none">
+      <path d="M13 2L23 7.5V18.5L13 24L3 18.5V7.5L13 2Z" fill="#FCB816"/>
+      <text x="13" y="17" text-anchor="middle" font-size="10" font-weight="700" fill="#2C2C2D" font-family="Arial">OB</text>
+    </svg>
+    <span class="logo-text">Ops<span>Bee</span></span>
+  </div>
+  <span class="hdr-sub">· Version Report</span>
+  <button class="sf-btn" onclick="openReinstall()" id="sf-btn" disabled title="Load data first">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    <span id="sf-label">Reinstall selected</span>
+  </button>
+</header>
+
+<div class="toast" id="toast"></div>
+
+<main>
+
+  <!-- Upload -->
+  <div id="upload-section">
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" accept=".csv" multiple id="file-input" onchange="handleFiles(this.files)">
+      <div class="dz-icon">📂</div>
+      <div class="dz-label">Drop both CSV exports here</div>
+      <div class="dz-sub">Device report + App version report · or click to browse</div>
+    </div>
+    <div class="file-status" id="file-status">
+      <div class="file-chip" id="chip-devices">📱 Device report</div>
+      <div class="file-chip" id="chip-versions">📦 App version report</div>
+    </div>
+    <div style="text-align:center;margin-top:12px">
+      <button class="run-btn" id="run-btn" disabled onclick="processData()">Run cross-reference</button>
+    </div>
+    <div class="err-banner" id="err-banner"></div>
+  </div>
+
+  <!-- Results -->
+  <div id="results-section">
+
+    <div class="summary">
+      <div class="sc"><div class="lbl">Total outdated</div><div class="val" id="sc-all">—</div></div>
+      <div class="sc crit"><div class="lbl">≤ 1.2 critical</div><div class="val" id="sc-crit">—</div></div>
+      <div class="sc stale"><div class="lbl">1.3–1.4.1 stale</div><div class="val" id="sc-stale">—</div></div>
+      <div class="sc"><div class="lbl">1.4.2 behind</div><div class="val" id="sc-behind">—</div></div>
+      <div class="sc minor"><div class="lbl">1.5.0 minor</div><div class="val" id="sc-minor">—</div></div>
+    </div>
+
+    <div class="toggle-row">
+      <label class="tog"><input type="checkbox" id="ignore-2w" onchange="render()"> Ignore offline &gt; 2 weeks</label>
+      <span class="sel-count" id="ignore-count"></span>
+      <span class="sel-count" id="sel-count"></span>
+    </div>
+
+    <div class="toolbar">
+      <div class="pill-group">
+        <div class="pill active" data-f="all" onclick="setFilter('all',this)">All</div>
+        <div class="pill crit" data-f="crit" onclick="setFilter('crit',this)">⚠ ≤ 1.2</div>
+        <div class="pill stale" data-f="stale" onclick="setFilter('stale',this)">1.3–1.4.1</div>
+        <div class="pill" data-f="behind" onclick="setFilter('behind',this)">1.4.2</div>
+        <div class="pill minor" data-f="minor" onclick="setFilter('minor',this)">1.5.0</div>
+        <div class="sep"></div>
+        <div class="pill" data-f="offline" onclick="setFilter('offline',this)">📶 Offline 7d+</div>
+        <div class="pill" data-f="stuck" onclick="setFilter('stuck',this)">🔄 Online &amp; stuck</div>
+      </div>
+      <div class="search-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="srch" placeholder="Search device or group…" oninput="render()">
+      </div>
+    </div>
+
+    <div class="info-banner" id="ignore-banner">
+      <strong>Ignore 2-week filter active</strong> — devices offline &gt; 14 days are hidden and excluded from exports.
+    </div>
+
+    <div class="table-wrap">
+      <div class="scroll-body">
+        <table>
+          <colgroup>
+            <col class="c-chk"><col class="c-dev"><col class="c-grp">
+            <col class="c-ver"><col class="c-tier"><col class="c-upd"><col class="c-seen">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="no-sort" style="text-align:center"><input type="checkbox" class="hdr-chk" id="chk-all" onchange="toggleAll(this)"></th>
+              <th onclick="srt('d')">Device <span class="arr" id="arr-d">↕</span></th>
+              <th onclick="srt('g')">Group <span class="arr" id="arr-g">↕</span></th>
+              <th onclick="srt('v')">Version <span class="arr" id="arr-v">↕</span></th>
+              <th onclick="srt('tier')">Tier <span class="arr" id="arr-tier">↕</span></th>
+              <th onclick="srt('u')">App updated <span class="arr" id="arr-u">↕</span></th>
+              <th onclick="srt('score')">Last seen <span class="arr" id="arr-score">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div id="empty-state" class="empty" style="display:none">
+        <div class="ei">🔍</div>No devices match your current filters
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="foot-left" id="foot-count"></div>
+      <div class="export-row">
+        <button class="exp-btn" onclick="exportCSV('stuck')">↓ Online &amp; stuck</button>
+        <button class="exp-btn" onclick="exportCSV('flagged')">↓ Flagged / dark</button>
+        <button class="exp-btn" onclick="exportCSV('current')">↓ Current view</button>
+        <button class="exp-btn" onclick="exportCSV('selected')">↓ Selected</button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+const LATEST = '1.5.1';
+const SF_BASE = 'https://app.scalefusion.com/cloud/emm/apple/app_mappings/reinstallation?app_id=201480&app_type=itunes_app&page=1&per_page=100';
+
+let rawRows = [], filt = 'all', sortK = 'score', sortD = 1;
+let selected = new Set();
+const files = { devices: null, versions: null };
+
+// --- CSV parser ---
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  return lines.slice(1).map(line => {
+    const vals = []; let cur = '', inQ = false;
+    for (const c of line) {
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === ',' && !inQ) { vals.push(cur.trim()); cur = ''; } else cur += c;
+    }
+    vals.push(cur.trim());
+    return Object.fromEntries(headers.map((h, i) => [h, vals[i] || '']));
+  });
+}
+
+function detectType(rows) {
+  if (!rows.length) return null;
+  const keys = Object.keys(rows[0]);
+  if (keys.includes('App Version') && keys.includes('App Name')) return 'versions';
+  if (keys.includes('Device ID') || keys.includes('OS Version')) return 'devices';
+  return null;
+}
+
+// --- File handling ---
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
+
+function handleFiles(fileList) {
+  const errBanner = document.getElementById('err-banner');
+  errBanner.style.display = 'none';
+  Array.from(fileList).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const rows = parseCSV(e.target.result);
+      const type = detectType(rows);
+      if (!type) {
+        errBanner.textContent = `Couldn't identify "${file.name}" — expected Device Report or App Version Report columns.`;
+        errBanner.style.display = 'block';
+        return;
+      }
+      files[type] = { name: file.name, rows };
+      updateChips();
+    };
+    reader.readAsText(file);
+  });
+}
+
+function updateChips() {
+  const cd = document.getElementById('chip-devices');
+  const cv = document.getElementById('chip-versions');
+  cd.textContent = files.devices ? `✓ ${files.devices.name}` : '📱 Device report';
+  cd.className = 'file-chip' + (files.devices ? ' ready' : '');
+  cv.textContent = files.versions ? `✓ ${files.versions.name}` : '📦 App version report';
+  cv.className = 'file-chip' + (files.versions ? ' ready' : '');
+  document.getElementById('run-btn').disabled = !(files.devices && files.versions);
+}
+
+// --- Helpers ---
+function score(r) {
+  if (!r) return 0;
+  const s = r.toLowerCase();
+  const n = () => { const x = s.match(/(\d+)/); return x ? +x[1] : 1; };
+  if (s.includes('minute') || s.includes('just') || s.includes('second')) return 0;
+  if (s.includes('hour')) return n() * 60;
+  if (s.includes('day')) return n() * 1440;
+  if (s.includes('month')) return n() * 43200;
+  if (s.includes('year')) return n() * 525600;
+  return 0;
+}
+function tier(v) {
+  const p = v.split('.').map(Number);
+  if (p[1] <= 2) return 'crit';
+  if (p[1] < 4 || (p[1] === 4 && p[2] <= 1)) return 'stale';
+  if (v === '1.4.2') return 'behind';
+  return 'minor';
+}
+function tierOrder(t) { return { crit: 0, stale: 1, behind: 2, minor: 3 }[t] ?? 4; }
+function dotClass(sc, t) {
+  if (sc < 60) return t === 'minor' ? 'online' : 'recent';
+  if (sc < 10080) return 'recent';
+  if (sc < 43200) return 'offline';
+  return 'dark';
+}
+
+// --- Process ---
+function processData() {
+  const devMap = {};
+  files.devices.rows.forEach(r => { devMap[r['Device Name']?.trim()] = r; });
+
+  rawRows = [];
+  files.versions.rows.forEach(vr => {
+    const name = vr['Device Name']?.trim();
+    if (!name || vr['App Version'] === LATEST) return;
+    const dr = devMap[name];
+    if (!dr) return;
+    const rel = dr['Last Seen On']?.trim() || '';
+    const sc = score(rel);
+    const t = tier(vr['App Version']);
+    rawRows.push({
+      d: name, g: vr['Device Group']?.trim() || '',
+      v: vr['App Version']?.trim() || '',
+      u: vr['Last Updated On']?.trim() || '',
+      serial: vr['Serial Number']?.trim() || '',
+      sfId: dr['Device ID']?.trim() || '',
+      r: rel, lastSeen: dr['Last Seen']?.trim() || '',
+      score: sc, tier: t,
+    });
+  });
+
+  selected.clear();
+  const c = rawRows.reduce((a, r) => { a[r.tier] = (a[r.tier] || 0) + 1; return a; }, {});
+  document.getElementById('sc-all').textContent = rawRows.length;
+  document.getElementById('sc-crit').textContent = c.crit || 0;
+  document.getElementById('sc-stale').textContent = c.stale || 0;
+  document.getElementById('sc-behind').textContent = c.behind || 0;
+  document.getElementById('sc-minor').textContent = c.minor || 0;
+  document.getElementById('results-section').style.display = 'block';
+  render();
+}
+
+// --- Filter / sort ---
+let activeFilterEl = document.querySelector('.pill.active');
+function setFilter(f, el) {
+  filt = f;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+function srt(k) {
+  document.querySelectorAll('th').forEach(t => t.classList.remove('sorted'));
+  document.querySelectorAll('.arr').forEach(a => a.textContent = '↕');
+  if (sortK === k) sortD *= -1; else { sortK = k; sortD = 1; }
+  const keys = { d:1, g:2, v:3, tier:4, u:5, score:6 };
+  const ths = document.querySelectorAll('th');
+  const idx = keys[k];
+  if (ths[idx]) { ths[idx].classList.add('sorted'); ths[idx].querySelector('.arr').textContent = sortD === 1 ? '↑' : '↓'; }
+  render();
+}
+
+const TWO_WEEKS = 14 * 1440;
+
+function getVisible() {
+  const ignore2w = document.getElementById('ignore-2w').checked;
+  const q = document.getElementById('srch').value.toLowerCase();
+  let data = rawRows.filter(r => {
+    if (ignore2w && r.score >= TWO_WEEKS) return false;
+    if (filt === 'offline' && r.score < 10080) return false;
+    if (filt === 'stuck' && !(r.score < 60 && r.tier !== 'minor')) return false;
+    if (!['all','offline','stuck'].includes(filt) && r.tier !== filt) return false;
+    if (q && !r.d.toLowerCase().includes(q) && !r.g.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  data.sort((a, b) => {
+    let av = a[sortK], bv = b[sortK];
+    if (sortK === 'tier') { av = tierOrder(a.tier); bv = tierOrder(b.tier); }
+    return av < bv ? -sortD : av > bv ? sortD : 0;
+  });
+  return data;
+}
+
+function render() {
+  const ignore2w = document.getElementById('ignore-2w').checked;
+  const excluded = rawRows.filter(r => r.score >= TWO_WEEKS).length;
+  document.getElementById('ignore-count').textContent = ignore2w ? `(${excluded} device${excluded !== 1 ? 's' : ''} hidden)` : '';
+  document.getElementById('ignore-banner').style.display = ignore2w ? 'block' : 'none';
+
+  const data = getVisible();
+  const tbody = document.getElementById('tbody');
+  const empty = document.getElementById('empty-state');
+
+  if (!data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; } 
+  else {
+    empty.style.display = 'none';
+    tbody.innerHTML = data.map(r => {
+      const chk = selected.has(r.d);
+      const esc = s => s.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      return `<tr class="${chk ? 'row-selected' : ''}" data-id="${esc(r.d)}">
+        <td style="text-align:center"><input type="checkbox" class="row-chk" ${chk ? 'checked' : ''} onchange="toggleRow('${esc(r.d)}',this)"></td>
+        <td>
+          <div class="dev-cell">
+            <span class="dev-name" title="${esc(r.d)}">${r.d}</span>
+            <button class="copy-btn" title="Copy name" onclick="copyText(this,'${esc(r.d)}')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+        </td>
+        <td class="muted" title="${esc(r.g)}">${r.g}</td>
+        <td><span class="badge ${r.tier}">${r.v}</span></td>
+        <td><span class="badge ${r.tier}">${r.tier}</span></td>
+        <td class="muted">${r.u}</td>
+        <td><div class="seen-cell"><div class="dot ${dotClass(r.score,r.tier)}" title="${r.lastSeen}"></div><span>${r.r}</span></div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  document.getElementById('foot-count').textContent = `${data.length} device${data.length !== 1 ? 's' : ''}`;
+  updateSelCount();
+  syncHeaderCheckbox(data);
+}
+
+function toggleRow(id, chk) {
+  if (chk.checked) selected.add(id); else selected.delete(id);
+  const tr = chk.closest('tr');
+  if (tr) tr.className = chk.checked ? 'row-selected' : '';
+  updateSelCount();
+  syncHeaderCheckbox(getVisible());
+}
+
+function toggleAll(chk) {
+  const data = getVisible();
+  data.forEach(r => { if (chk.checked) selected.add(r.d); else selected.delete(r.d); });
+  render();
+}
+
+function syncHeaderCheckbox(data) {
+  const hdr = document.getElementById('chk-all');
+  if (!data.length) { hdr.checked = false; hdr.indeterminate = false; return; }
+  const selInView = data.filter(r => selected.has(r.d)).length;
+  hdr.checked = selInView === data.length;
+  hdr.indeterminate = selInView > 0 && selInView < data.length;
+}
+
+function updateSelCount() {
+  const n = selected.size;
+  const withId = [...selected].filter(id => rawRows.find(r => r.d === id && r.sfId)).length;
+  const sc = document.getElementById('sel-count');
+  sc.textContent = n ? `${n} selected${withId < n ? ` (${withId} with SF ID)` : ''}` : '';
+  const btn = document.getElementById('sf-btn');
+  const label = document.getElementById('sf-label');
+  if (n === 0) {
+    btn.disabled = true;
+    label.textContent = 'Reinstall selected';
+    btn.title = 'Select devices first';
+  } else if (withId === 0) {
+    btn.disabled = true;
+    label.textContent = `${n} selected — no SF IDs`;
+    btn.title = 'Selected devices have no Scalefusion ID';
+  } else {
+    btn.disabled = false;
+    label.textContent = `Reinstall ${withId} selected`;
+    btn.title = `Open Scalefusion reinstall for ${withId} device${withId !== 1 ? 's' : ''}`;
+  }
+}
+
+function openReinstall() {
+  const ids = [...selected].map(id => rawRows.find(r => r.d === id)?.sfId).filter(Boolean);
+  if (!ids.length) { showToast('No selected devices have a Scalefusion ID'); return; }
+  const params = ids.map(id => `device_ids[]=${id}`).join('&');
+  window.open(`${SF_BASE}&${params}`, '_blank');
+}
+
+// --- Clipboard ---
+function copyText(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+    showToast('Copied: ' + text);
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+    }, 2000);
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._to);
+  t._to = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// --- Exports ---
+function toCSV(rows) {
+  const fields = ['Device Name','Group','App Version','Version Tier','App Last Updated','Last Seen','Last Seen (relative)','Serial Number','Scalefusion Device ID'];
+  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  return fields.join(',') + '\n' + rows.map(r => [r.d,r.g,r.v,r.tier,r.u,r.lastSeen,r.r,r.serial,r.sfId].map(esc).join(',')).join('\n');
+}
+function dl(content, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: 'text/csv' }));
+  a.download = name; a.click();
+}
+function exportCSV(type) {
+  const ignore2w = document.getElementById('ignore-2w').checked;
+  const base = rawRows.filter(r => !(ignore2w && r.score >= TWO_WEEKS));
+  const date = new Date().toISOString().slice(0, 10);
+  if (type === 'current') dl(toCSV(getVisible()), `opsbee-version-report-${date}.csv`);
+  else if (type === 'selected') dl(toCSV(base.filter(r => selected.has(r.d))), `opsbee-selected-${date}.csv`);
+  else if (type === 'stuck') { const r = base.filter(r => r.score < 60 && r.tier !== 'minor'); r.sort((a,b) => tierOrder(a.tier)-tierOrder(b.tier)); dl(toCSV(r), `online-stuck-push-needed-${date}.csv`); }
+  else if (type === 'flagged') { const r = base.filter(r => r.score >= 43200 || r.tier === 'crit'); r.sort((a,b) => b.score-a.score); dl(toCSV(r), `flagged-dark-devices-${date}.csv`); }
+}
+</script>
+</body>
+</html>
