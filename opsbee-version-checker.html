@@ -68,6 +68,9 @@
   .tog { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gray-700); cursor: pointer; user-select: none; }
   .tog input[type=checkbox] { accent-color: var(--gold); width: 14px; height: 14px; cursor: pointer; }
   .sel-count { font-size: 11px; color: var(--gray-500); }
+  .version-filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .version-filter-row .lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-500); white-space: nowrap; }
+  .pill.active.ver { background: var(--gold); color: var(--gray-900); border-color: var(--gold); }
 
   /* Table */
   .table-wrap { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
@@ -206,6 +209,11 @@
       </div>
     </div>
 
+    <div class="version-filter-row" id="version-filter-row" style="display:none">
+      <span class="lbl">Version</span>
+      <div class="pill-group" id="version-pills"></div>
+    </div>
+
     <div class="info-banner" id="ignore-banner">
       <strong>Ignore 2-week filter active</strong> — devices offline &gt; 14 days are hidden and excluded from exports.
     </div>
@@ -251,7 +259,7 @@
 <script>
 const SF_BASE = 'https://app.scalefusion.com/cloud/emm/apple/app_mappings/reinstallation?app_id=201480&app_type=itunes_app&page=1&per_page=100';
 
-let rawRows = [], filt = 'all', sortK = 'score', sortD = 1;
+let rawRows = [], filt = 'all', filtVersion = '', sortK = 'score', sortD = 1;
 let selected = new Set();
 const files = { devices: null, versions: null };
 
@@ -358,20 +366,50 @@ function processData() {
   });
 
   selected.clear();
-  const uniqueVersions = new Set(rawRows.map(r => r.v)).size;
+  filtVersion = '';
+  const uniqueVersions = [...new Set(rawRows.map(r => r.v))].sort(semverCmp);
   const stuckCount = rawRows.filter(r => r.score < 60).length;
   document.getElementById('sc-all').textContent = rawRows.length;
-  document.getElementById('sc-versions').textContent = uniqueVersions;
+  document.getElementById('sc-versions').textContent = uniqueVersions.length;
   document.getElementById('sc-stuck').textContent = stuckCount;
+
+  // Build version pills
+  const pillContainer = document.getElementById('version-pills');
+  pillContainer.innerHTML = uniqueVersions.map(v =>
+    `<div class="pill ver" data-v="${v}" onclick="setVersionFilter('${v}',this)">${v}</div>`
+  ).join('');
+  document.getElementById('version-filter-row').style.display = uniqueVersions.length ? 'flex' : 'none';
+
   document.getElementById('results-section').style.display = 'block';
   render();
+}
+
+// --- Semver sort ---
+function semverCmp(a, b) {
+  const pa = a.split('.').map(Number), pb = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const diff = (pa[i] || 0) - (pb[i] || 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
 }
 
 // --- Filter / sort ---
 function setFilter(f, el) {
   filt = f;
-  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.pill-group:first-of-type .pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
+  render();
+}
+function setVersionFilter(v, el) {
+  if (filtVersion === v) {
+    filtVersion = '';
+    el.classList.remove('active');
+  } else {
+    filtVersion = v;
+    document.querySelectorAll('#version-pills .pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+  }
   render();
 }
 function srt(k) {
@@ -394,6 +432,7 @@ function getVisible() {
     if (ignore2w && r.score >= TWO_WEEKS) return false;
     if (filt === 'offline' && r.score < 10080) return false;
     if (filt === 'stuck' && r.score >= 60) return false;
+    if (filtVersion && r.v !== filtVersion) return false;
     if (q && !r.d.toLowerCase().includes(q) && !r.g.toLowerCase().includes(q)) return false;
     return true;
   });
