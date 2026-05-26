@@ -9,10 +9,7 @@
     --gold: #FCB816; --gold-light: #FEF3D0;
     --gray-900: #2C2C2D; --gray-700: #4A4A4B; --gray-500: #6B6B6C;
     --gray-300: #C8C8C9; --gray-100: #F5F5F5; --white: #FFFFFF;
-    --crit-bg: #FAECE7; --crit-text: #993C1D;
-    --stale-bg: #FAEEDA; --stale-text: #854F0B;
-    --behind-bg: #F1EFE8; --behind-text: #5F5E5A;
-    --minor-bg: #E6F1FB; --minor-text: #185FA5;
+    --err-bg: #FAECE7; --err-text: #993C1D;
     --green: #1D9E75;
     --radius: 8px;
     --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
@@ -45,19 +42,16 @@
   .file-status { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; justify-content: center; }
   .file-chip { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid var(--gray-300); background: var(--gray-100); color: var(--gray-500); }
   .file-chip.ready { background: #F0FAF6; border-color: var(--green); color: var(--green); }
-  .file-chip.error { background: var(--crit-bg); border-color: var(--crit-text); color: var(--crit-text); }
+  .file-chip.error { background: var(--err-bg); border-color: var(--err-text); color: var(--err-text); }
   .run-btn { margin-top: 16px; background: var(--gold); color: var(--gray-900); border: none; border-radius: var(--radius); padding: 10px 28px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
   .run-btn:hover { opacity: .85; }
   .run-btn:disabled { opacity: .35; cursor: not-allowed; }
 
   /* Summary */
-  .summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; }
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
   .sc { background: var(--white); border-radius: var(--radius); padding: 10px 12px; box-shadow: var(--shadow); }
   .sc .lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-500); margin-bottom: 4px; }
   .sc .val { font-size: 22px; font-weight: 700; }
-  .sc.crit { background: var(--crit-bg); } .sc.crit .val { color: var(--crit-text); }
-  .sc.stale { background: var(--stale-bg); } .sc.stale .val { color: var(--stale-text); }
-  .sc.minor { background: var(--minor-bg); } .sc.minor .val { color: var(--minor-text); }
 
   /* Toolbar */
   .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
@@ -65,9 +59,6 @@
   .pill { background: var(--white); border: 1px solid var(--gray-300); border-radius: 20px; padding: 5px 12px; font-size: 12px; cursor: pointer; transition: background .12s, border-color .12s; white-space: nowrap; }
   .pill:hover { border-color: var(--gray-500); }
   .pill.active { background: var(--gray-900); color: var(--white); border-color: var(--gray-900); }
-  .pill.active.crit { background: var(--crit-text); border-color: var(--crit-text); }
-  .pill.active.stale { background: var(--stale-text); border-color: var(--stale-text); }
-  .pill.active.minor { background: var(--minor-text); border-color: var(--minor-text); }
   .sep { width: 1px; height: 20px; background: var(--gray-300); align-self: center; }
   .search-wrap { flex: 1; min-width: 180px; position: relative; }
   .search-wrap svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--gray-500); pointer-events: none; }
@@ -83,11 +74,10 @@
   .scroll-body { max-height: 520px; overflow-y: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
   colgroup col.c-chk { width: 36px; }
-  colgroup col.c-dev { width: 28%; }
-  colgroup col.c-grp { width: 20%; }
-  colgroup col.c-ver { width: 8%; }
-  colgroup col.c-tier { width: 8%; }
-  colgroup col.c-upd { width: 18%; }
+  colgroup col.c-dev { width: 30%; }
+  colgroup col.c-grp { width: 22%; }
+  colgroup col.c-ver { width: 10%; }
+  colgroup col.c-upd { width: 20%; }
   colgroup col.c-seen { width: 18%; }
   thead { position: sticky; top: 0; z-index: 2; }
   th { background: var(--gray-100); padding: 9px 8px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-500); cursor: pointer; user-select: none; white-space: nowrap; border-bottom: 1px solid var(--gray-300); }
@@ -112,11 +102,7 @@
   .row-chk { accent-color: var(--gold); width: 14px; height: 14px; cursor: pointer; display: block; margin: 0 auto; }
   .hdr-chk { accent-color: var(--gold); width: 14px; height: 14px; cursor: pointer; }
 
-  .badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-  .badge.crit { background: var(--crit-bg); color: var(--crit-text); }
-  .badge.stale { background: var(--stale-bg); color: var(--stale-text); }
-  .badge.behind { background: var(--behind-bg); color: var(--behind-text); }
-  .badge.minor { background: var(--minor-bg); color: var(--minor-text); }
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-300); }
   .seen-cell { display: flex; align-items: center; gap: 5px; }
   .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
   .dot.online { background: var(--green); }
@@ -135,7 +121,7 @@
   .empty { padding: 48px; text-align: center; color: var(--gray-500); }
   .empty .ei { font-size: 28px; margin-bottom: 8px; }
   .info-banner { background: var(--gold-light); border: 1px solid var(--gold); border-radius: var(--radius); padding: 9px 14px; font-size: 12px; color: var(--gray-700); margin-bottom: 10px; display: none; }
-  .err-banner { background: var(--crit-bg); border: 1px solid var(--crit-text); border-radius: var(--radius); padding: 9px 14px; font-size: 12px; color: var(--crit-text); margin-bottom: 10px; display: none; }
+  .err-banner { background: var(--err-bg); border: 1px solid var(--err-text); border-radius: var(--radius); padding: 9px 14px; font-size: 12px; color: var(--err-text); margin-bottom: 10px; display: none; }
 
   .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(8px); background: var(--gray-900); color: var(--white); padding: 8px 16px; border-radius: 20px; font-size: 12px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 999; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -196,11 +182,9 @@
   <div id="results-section">
 
     <div class="summary">
-      <div class="sc"><div class="lbl">Total outdated</div><div class="val" id="sc-all">—</div></div>
-      <div class="sc crit"><div class="lbl">≤ 1.2 critical</div><div class="val" id="sc-crit">—</div></div>
-      <div class="sc stale"><div class="lbl">1.3–1.4.1 stale</div><div class="val" id="sc-stale">—</div></div>
-      <div class="sc"><div class="lbl">1.4.2 behind</div><div class="val" id="sc-behind">—</div></div>
-      <div class="sc minor"><div class="lbl">1.5.0 minor</div><div class="val" id="sc-minor">—</div></div>
+      <div class="sc"><div class="lbl">Total devices</div><div class="val" id="sc-all">—</div></div>
+      <div class="sc"><div class="lbl">Unique versions</div><div class="val" id="sc-versions">—</div></div>
+      <div class="sc"><div class="lbl">Online &amp; stuck</div><div class="val" id="sc-stuck">—</div></div>
     </div>
 
     <div class="toggle-row">
@@ -212,10 +196,6 @@
     <div class="toolbar">
       <div class="pill-group">
         <div class="pill active" data-f="all" onclick="setFilter('all',this)">All</div>
-        <div class="pill crit" data-f="crit" onclick="setFilter('crit',this)">⚠ ≤ 1.2</div>
-        <div class="pill stale" data-f="stale" onclick="setFilter('stale',this)">1.3–1.4.1</div>
-        <div class="pill" data-f="behind" onclick="setFilter('behind',this)">1.4.2</div>
-        <div class="pill minor" data-f="minor" onclick="setFilter('minor',this)">1.5.0</div>
         <div class="sep"></div>
         <div class="pill" data-f="offline" onclick="setFilter('offline',this)">📶 Offline 7d+</div>
         <div class="pill" data-f="stuck" onclick="setFilter('stuck',this)">🔄 Online &amp; stuck</div>
@@ -235,7 +215,7 @@
         <table>
           <colgroup>
             <col class="c-chk"><col class="c-dev"><col class="c-grp">
-            <col class="c-ver"><col class="c-tier"><col class="c-upd"><col class="c-seen">
+            <col class="c-ver"><col class="c-upd"><col class="c-seen">
           </colgroup>
           <thead>
             <tr>
@@ -243,7 +223,6 @@
               <th onclick="srt('d')">Device <span class="arr" id="arr-d">↕</span></th>
               <th onclick="srt('g')">Group <span class="arr" id="arr-g">↕</span></th>
               <th onclick="srt('v')">Version <span class="arr" id="arr-v">↕</span></th>
-              <th onclick="srt('tier')">Tier <span class="arr" id="arr-tier">↕</span></th>
               <th onclick="srt('u')">App updated <span class="arr" id="arr-u">↕</span></th>
               <th onclick="srt('score')">Last seen <span class="arr" id="arr-score">↕</span></th>
             </tr>
@@ -270,7 +249,6 @@
 </main>
 
 <script>
-const LATEST = '1.5.1';
 const SF_BASE = 'https://app.scalefusion.com/cloud/emm/apple/app_mappings/reinstallation?app_id=201480&app_type=itunes_app&page=1&per_page=100';
 
 let rawRows = [], filt = 'all', sortK = 'score', sortD = 1;
@@ -348,16 +326,8 @@ function score(r) {
   if (s.includes('year')) return n() * 525600;
   return 0;
 }
-function tier(v) {
-  const p = v.split('.').map(Number);
-  if (p[1] <= 2) return 'crit';
-  if (p[1] < 4 || (p[1] === 4 && p[2] <= 1)) return 'stale';
-  if (v === '1.4.2') return 'behind';
-  return 'minor';
-}
-function tierOrder(t) { return { crit: 0, stale: 1, behind: 2, minor: 3 }[t] ?? 4; }
-function dotClass(sc, t) {
-  if (sc < 60) return t === 'minor' ? 'online' : 'recent';
+function dotClass(sc) {
+  if (sc < 60) return 'online';
   if (sc < 10080) return 'recent';
   if (sc < 43200) return 'offline';
   return 'dark';
@@ -371,12 +341,11 @@ function processData() {
   rawRows = [];
   files.versions.rows.forEach(vr => {
     const name = vr['Device Name']?.trim();
-    if (!name || vr['App Version'] === LATEST) return;
+    if (!name) return;
     const dr = devMap[name];
     if (!dr) return;
     const rel = dr['Last Seen On']?.trim() || '';
     const sc = score(rel);
-    const t = tier(vr['App Version']);
     rawRows.push({
       d: name, g: vr['Device Group']?.trim() || '',
       v: vr['App Version']?.trim() || '',
@@ -384,23 +353,21 @@ function processData() {
       serial: vr['Serial Number']?.trim() || '',
       sfId: dr['Device ID']?.trim() || '',
       r: rel, lastSeen: dr['Last Seen']?.trim() || '',
-      score: sc, tier: t,
+      score: sc,
     });
   });
 
   selected.clear();
-  const c = rawRows.reduce((a, r) => { a[r.tier] = (a[r.tier] || 0) + 1; return a; }, {});
+  const uniqueVersions = new Set(rawRows.map(r => r.v)).size;
+  const stuckCount = rawRows.filter(r => r.score < 60).length;
   document.getElementById('sc-all').textContent = rawRows.length;
-  document.getElementById('sc-crit').textContent = c.crit || 0;
-  document.getElementById('sc-stale').textContent = c.stale || 0;
-  document.getElementById('sc-behind').textContent = c.behind || 0;
-  document.getElementById('sc-minor').textContent = c.minor || 0;
+  document.getElementById('sc-versions').textContent = uniqueVersions;
+  document.getElementById('sc-stuck').textContent = stuckCount;
   document.getElementById('results-section').style.display = 'block';
   render();
 }
 
 // --- Filter / sort ---
-let activeFilterEl = document.querySelector('.pill.active');
 function setFilter(f, el) {
   filt = f;
   document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
@@ -411,7 +378,7 @@ function srt(k) {
   document.querySelectorAll('th').forEach(t => t.classList.remove('sorted'));
   document.querySelectorAll('.arr').forEach(a => a.textContent = '↕');
   if (sortK === k) sortD *= -1; else { sortK = k; sortD = 1; }
-  const keys = { d:1, g:2, v:3, tier:4, u:5, score:6 };
+  const keys = { d:1, g:2, v:3, u:4, score:5 };
   const ths = document.querySelectorAll('th');
   const idx = keys[k];
   if (ths[idx]) { ths[idx].classList.add('sorted'); ths[idx].querySelector('.arr').textContent = sortD === 1 ? '↑' : '↓'; }
@@ -426,14 +393,12 @@ function getVisible() {
   let data = rawRows.filter(r => {
     if (ignore2w && r.score >= TWO_WEEKS) return false;
     if (filt === 'offline' && r.score < 10080) return false;
-    if (filt === 'stuck' && !(r.score < 60 && r.tier !== 'minor')) return false;
-    if (!['all','offline','stuck'].includes(filt) && r.tier !== filt) return false;
+    if (filt === 'stuck' && r.score >= 60) return false;
     if (q && !r.d.toLowerCase().includes(q) && !r.g.toLowerCase().includes(q)) return false;
     return true;
   });
   data.sort((a, b) => {
-    let av = a[sortK], bv = b[sortK];
-    if (sortK === 'tier') { av = tierOrder(a.tier); bv = tierOrder(b.tier); }
+    const av = a[sortK], bv = b[sortK];
     return av < bv ? -sortD : av > bv ? sortD : 0;
   });
   return data;
@@ -449,7 +414,7 @@ function render() {
   const tbody = document.getElementById('tbody');
   const empty = document.getElementById('empty-state');
 
-  if (!data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; } 
+  if (!data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; }
   else {
     empty.style.display = 'none';
     tbody.innerHTML = data.map(r => {
@@ -469,10 +434,9 @@ function render() {
           </div>
         </td>
         <td class="muted" title="${esc(r.g)}">${r.g}</td>
-        <td><span class="badge ${r.tier}">${r.v}</span></td>
-        <td><span class="badge ${r.tier}">${r.tier}</span></td>
+        <td><span class="badge">${r.v}</span></td>
         <td class="muted">${r.u}</td>
-        <td><div class="seen-cell"><div class="dot ${dotClass(r.score,r.tier)}" title="${r.lastSeen}"></div><span>${r.r}</span></div></td>
+        <td><div class="seen-cell"><div class="dot ${dotClass(r.score)}" title="${r.lastSeen}"></div><span>${r.r}</span></div></td>
       </tr>`;
     }).join('');
   }
@@ -555,9 +519,9 @@ function showToast(msg) {
 
 // --- Exports ---
 function toCSV(rows) {
-  const fields = ['Device Name','Group','App Version','Version Tier','App Last Updated','Last Seen','Last Seen (relative)','Serial Number','Scalefusion Device ID'];
+  const fields = ['Device Name','Group','App Version','App Last Updated','Last Seen','Last Seen (relative)','Serial Number','Scalefusion Device ID'];
   const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  return fields.join(',') + '\n' + rows.map(r => [r.d,r.g,r.v,r.tier,r.u,r.lastSeen,r.r,r.serial,r.sfId].map(esc).join(',')).join('\n');
+  return fields.join(',') + '\n' + rows.map(r => [r.d,r.g,r.v,r.u,r.lastSeen,r.r,r.serial,r.sfId].map(esc).join(',')).join('\n');
 }
 function dl(content, name) {
   const a = document.createElement('a');
@@ -570,8 +534,8 @@ function exportCSV(type) {
   const date = new Date().toISOString().slice(0, 10);
   if (type === 'current') dl(toCSV(getVisible()), `opsbee-version-report-${date}.csv`);
   else if (type === 'selected') dl(toCSV(base.filter(r => selected.has(r.d))), `opsbee-selected-${date}.csv`);
-  else if (type === 'stuck') { const r = base.filter(r => r.score < 60 && r.tier !== 'minor'); r.sort((a,b) => tierOrder(a.tier)-tierOrder(b.tier)); dl(toCSV(r), `online-stuck-push-needed-${date}.csv`); }
-  else if (type === 'flagged') { const r = base.filter(r => r.score >= 43200 || r.tier === 'crit'); r.sort((a,b) => b.score-a.score); dl(toCSV(r), `flagged-dark-devices-${date}.csv`); }
+  else if (type === 'stuck') { const r = base.filter(r => r.score < 60); r.sort((a,b) => a.v.localeCompare(b.v)); dl(toCSV(r), `online-stuck-push-needed-${date}.csv`); }
+  else if (type === 'flagged') { const r = base.filter(r => r.score >= 43200); r.sort((a,b) => b.score-a.score); dl(toCSV(r), `flagged-dark-devices-${date}.csv`); }
 }
 </script>
 </body>
