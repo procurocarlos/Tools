@@ -18,6 +18,22 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--font); background: var(--gray-100); color: var(--gray-900); font-size: 13px; min-height: 100vh; }
 
+  /* Lock screen */
+  #lock-screen { position: fixed; inset: 0; background: var(--gray-900); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+  .lock-box { background: #1e1e1f; border: 1px solid #333; border-radius: 12px; padding: 36px 32px; width: 100%; max-width: 340px; text-align: center; }
+  .lock-logo { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 24px; }
+  .lock-logo-text { color: var(--white); font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+  .lock-logo-text span { color: var(--gold); }
+  .lock-box h2 { color: var(--white); font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .lock-box p { color: var(--gray-500); font-size: 12px; margin-bottom: 20px; }
+  .lock-input { width: 100%; padding: 10px 12px; background: #2a2a2b; border: 1px solid #444; border-radius: var(--radius); color: var(--white); font-size: 13px; font-family: var(--font); outline: none; transition: border-color .15s; }
+  .lock-input:focus { border-color: var(--gold); }
+  .lock-input.error { border-color: var(--err-text); animation: shake .3s; }
+  .lock-btn { margin-top: 12px; width: 100%; background: var(--gold); color: var(--gray-900); border: none; border-radius: var(--radius); padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: opacity .15s; }
+  .lock-btn:hover { opacity: .88; }
+  .lock-err { margin-top: 10px; font-size: 11px; color: var(--err-text); min-height: 16px; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
   /* Header */
   header { background: var(--gray-900); padding: 0 24px; display: flex; align-items: center; gap: 12px; height: 52px; }
   .logo { display: flex; align-items: center; gap: 8px; }
@@ -149,6 +165,24 @@
 </style>
 </head>
 <body>
+
+<!-- Lock screen -->
+<div id="lock-screen">
+  <div class="lock-box">
+    <div class="lock-logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <path d="M13 2L23 7.5V18.5L13 24L3 18.5V7.5L13 2Z" fill="#FCB816"/>
+        <text x="13" y="17" text-anchor="middle" font-size="10" font-weight="700" fill="#2C2C2D" font-family="Arial">OB</text>
+      </svg>
+      <span class="lock-logo-text">Ops<span>Bee</span></span>
+    </div>
+    <h2>Version Report</h2>
+    <p>Enter the password to continue</p>
+    <input class="lock-input" id="lock-input" type="password" placeholder="Password" onkeydown="if(event.key==='Enter') unlock()">
+    <button class="lock-btn" onclick="unlock()">Unlock</button>
+    <div class="lock-err" id="lock-err"></div>
+  </div>
+</div>
 
 <header>
   <div class="logo">
@@ -285,6 +319,30 @@
 </main>
 
 <script>
+// --- Auth ---
+const PW_HASH = 'f5482ee086ae1b2009ff9888c01cd4dc3f28aa8b10e24333119905c077fd7589';
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+async function unlock() {
+  const val = document.getElementById('lock-input').value;
+  const hash = await sha256(val);
+  if (hash === PW_HASH) {
+    sessionStorage.setItem('ob_auth', '1');
+    document.getElementById('lock-screen').style.display = 'none';
+  } else {
+    const inp = document.getElementById('lock-input');
+    const err = document.getElementById('lock-err');
+    inp.classList.add('error');
+    err.textContent = 'Incorrect password';
+    setTimeout(() => inp.classList.remove('error'), 400);
+  }
+}
+if (sessionStorage.getItem('ob_auth') === '1') {
+  document.getElementById('lock-screen').style.display = 'none';
+}
+
 const SF_BASE = 'https://app.scalefusion.com/cloud/emm/apple/app_mappings/reinstallation?app_id=201480&app_type=itunes_app&page=1&per_page=100';
 
 let rawRows = [], filt = 'all', filtVersions = new Set(), sortK = 'score', sortD = 1;
