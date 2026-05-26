@@ -68,9 +68,25 @@
   .tog { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gray-700); cursor: pointer; user-select: none; }
   .tog input[type=checkbox] { accent-color: var(--gold); width: 14px; height: 14px; cursor: pointer; }
   .sel-count { font-size: 11px; color: var(--gray-500); }
-  .version-filter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-  .version-filter-row .lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-500); white-space: nowrap; }
-  .pill.active.ver { background: var(--gold); color: var(--gray-900); border-color: var(--gold); }
+
+  /* Version dropdown */
+  .ver-dropdown { position: relative; }
+  .ver-btn { display: flex; align-items: center; gap: 6px; background: var(--white); border: 1px solid var(--gray-300); border-radius: 20px; padding: 5px 12px; font-size: 12px; cursor: pointer; transition: background .12s, border-color .12s; white-space: nowrap; font-family: var(--font); }
+  .ver-btn:hover { border-color: var(--gray-500); }
+  .ver-btn.has-filter { background: var(--gray-900); color: var(--white); border-color: var(--gray-900); }
+  .ver-btn .caret { font-size: 9px; opacity: .6; transition: transform .15s; }
+  .ver-btn.open .caret { transform: rotate(180deg); }
+  .ver-menu { position: absolute; top: calc(100% + 5px); left: 0; background: var(--white); border: 1px solid var(--gray-300); border-radius: var(--radius); box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 150px; z-index: 50; display: none; }
+  .ver-menu.open { display: block; }
+  .ver-list { max-height: 220px; overflow-y: auto; padding: 4px 0; }
+  .ver-item { display: flex; align-items: center; gap: 8px; padding: 7px 14px; font-size: 12px; cursor: pointer; user-select: none; }
+  .ver-item:hover { background: var(--gray-100); }
+  .ver-item input[type=checkbox] { accent-color: var(--gold); width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; }
+  .ver-item label { cursor: pointer; flex: 1; }
+  .ver-count { font-size: 10px; color: var(--gray-500); margin-left: auto; }
+  .ver-footer { border-top: 1px solid var(--gray-300); padding: 6px 14px; display: flex; justify-content: flex-end; }
+  .ver-clear { background: none; border: none; font-size: 11px; color: var(--gray-500); cursor: pointer; font-family: var(--font); padding: 0; }
+  .ver-clear:hover { color: var(--gray-900); }
 
   /* Table */
   .table-wrap { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
@@ -203,15 +219,27 @@
         <div class="pill" data-f="offline" onclick="setFilter('offline',this)">📶 Offline 7d+</div>
         <div class="pill" data-f="stuck" onclick="setFilter('stuck',this)">🔄 Online &amp; stuck</div>
       </div>
+
+      <div class="sep"></div>
+
+      <!-- Version dropdown -->
+      <div class="ver-dropdown" id="ver-dropdown" style="display:none">
+        <button class="ver-btn" id="ver-btn" onclick="toggleVerDropdown(event)">
+          <span id="ver-btn-label">Version</span>
+          <span class="caret">▾</span>
+        </button>
+        <div class="ver-menu" id="ver-menu">
+          <div class="ver-list" id="ver-list"></div>
+          <div class="ver-footer">
+            <button class="ver-clear" onclick="clearVersionFilter()">Clear all</button>
+          </div>
+        </div>
+      </div>
+
       <div class="search-wrap">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="srch" placeholder="Search device or group…" oninput="render()">
       </div>
-    </div>
-
-    <div class="version-filter-row" id="version-filter-row" style="display:none">
-      <span class="lbl">Version</span>
-      <div class="pill-group" id="version-pills"></div>
     </div>
 
     <div class="info-banner" id="ignore-banner">
@@ -259,7 +287,7 @@
 <script>
 const SF_BASE = 'https://app.scalefusion.com/cloud/emm/apple/app_mappings/reinstallation?app_id=201480&app_type=itunes_app&page=1&per_page=100';
 
-let rawRows = [], filt = 'all', filtVersion = '', sortK = 'score', sortD = 1;
+let rawRows = [], filt = 'all', filtVersions = new Set(), sortK = 'score', sortD = 1;
 let selected = new Set();
 const files = { devices: null, versions: null };
 
@@ -340,6 +368,14 @@ function dotClass(sc) {
   if (sc < 43200) return 'offline';
   return 'dark';
 }
+function semverCmp(a, b) {
+  const pa = a.split('.').map(Number), pb = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const diff = (pa[i] || 0) - (pb[i] || 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
 
 // --- Process ---
 function processData() {
@@ -366,50 +402,73 @@ function processData() {
   });
 
   selected.clear();
-  filtVersion = '';
+  filtVersions = new Set();
+
   const uniqueVersions = [...new Set(rawRows.map(r => r.v))].sort(semverCmp);
   const stuckCount = rawRows.filter(r => r.score < 60).length;
   document.getElementById('sc-all').textContent = rawRows.length;
   document.getElementById('sc-versions').textContent = uniqueVersions.length;
   document.getElementById('sc-stuck').textContent = stuckCount;
 
-  // Build version pills
-  const pillContainer = document.getElementById('version-pills');
-  pillContainer.innerHTML = uniqueVersions.map(v =>
-    `<div class="pill ver" data-v="${v}" onclick="setVersionFilter('${v}',this)">${v}</div>`
+  // Build version dropdown list
+  const verCounts = rawRows.reduce((a, r) => { a[r.v] = (a[r.v] || 0) + 1; return a; }, {});
+  document.getElementById('ver-list').innerHTML = uniqueVersions.map(v =>
+    `<label class="ver-item">
+      <input type="checkbox" value="${v}" onchange="toggleVersionFilter('${v}',this)">
+      <span>${v}</span>
+      <span class="ver-count">${verCounts[v]}</span>
+    </label>`
   ).join('');
-  document.getElementById('version-filter-row').style.display = uniqueVersions.length ? 'flex' : 'none';
+  document.getElementById('ver-dropdown').style.display = uniqueVersions.length ? 'block' : 'none';
 
   document.getElementById('results-section').style.display = 'block';
   render();
 }
 
-// --- Semver sort ---
-function semverCmp(a, b) {
-  const pa = a.split('.').map(Number), pb = b.split('.').map(Number);
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const diff = (pa[i] || 0) - (pb[i] || 0);
-    if (diff !== 0) return diff;
-  }
-  return 0;
+// --- Version dropdown ---
+function toggleVerDropdown(e) {
+  e.stopPropagation();
+  const btn = document.getElementById('ver-btn');
+  const menu = document.getElementById('ver-menu');
+  const open = menu.classList.toggle('open');
+  btn.classList.toggle('open', open);
 }
+
+function toggleVersionFilter(v, checkbox) {
+  if (checkbox.checked) filtVersions.add(v); else filtVersions.delete(v);
+  updateVerBtn();
+  render();
+}
+
+function clearVersionFilter() {
+  filtVersions.clear();
+  document.querySelectorAll('#ver-list input[type=checkbox]').forEach(c => c.checked = false);
+  updateVerBtn();
+  render();
+}
+
+function updateVerBtn() {
+  const btn = document.getElementById('ver-btn');
+  const label = document.getElementById('ver-btn-label');
+  const n = filtVersions.size;
+  label.textContent = n ? `Version (${n})` : 'Version';
+  btn.classList.toggle('has-filter', n > 0);
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', e => {
+  const dd = document.getElementById('ver-dropdown');
+  if (dd && !dd.contains(e.target)) {
+    document.getElementById('ver-menu').classList.remove('open');
+    document.getElementById('ver-btn').classList.remove('open');
+  }
+});
 
 // --- Filter / sort ---
 function setFilter(f, el) {
   filt = f;
-  document.querySelectorAll('.pill-group:first-of-type .pill').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.pill-group .pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
-  render();
-}
-function setVersionFilter(v, el) {
-  if (filtVersion === v) {
-    filtVersion = '';
-    el.classList.remove('active');
-  } else {
-    filtVersion = v;
-    document.querySelectorAll('#version-pills .pill').forEach(p => p.classList.remove('active'));
-    el.classList.add('active');
-  }
   render();
 }
 function srt(k) {
@@ -432,7 +491,7 @@ function getVisible() {
     if (ignore2w && r.score >= TWO_WEEKS) return false;
     if (filt === 'offline' && r.score < 10080) return false;
     if (filt === 'stuck' && r.score >= 60) return false;
-    if (filtVersion && r.v !== filtVersion) return false;
+    if (filtVersions.size > 0 && !filtVersions.has(r.v)) return false;
     if (q && !r.d.toLowerCase().includes(q) && !r.g.toLowerCase().includes(q)) return false;
     return true;
   });
