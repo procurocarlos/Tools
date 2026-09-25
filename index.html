@@ -280,7 +280,8 @@ const S = {
   zonesVisible:true,
   apiKey:localStorage.getItem('fm_key')||'',
   _nid:1, mx:0, my:0,
-  snapLinesX:[], snapLinesY:[]  // active snap line positions for visual feedback
+  snapLinesX:[], snapLinesY:[],
+  labelDragging:false, labelDragId:null, labelDragStart:null, labelDragOrig:null
 };
 
 /* ================================================================
@@ -417,9 +418,13 @@ function removeEl(id){
   if(S.selId===id){S.selId=null;updateProps();}
 }
 
-/* ================================================================
-   CANVAS
-================================================================ */
+function zoneLabelCenter(z){
+  let cx,cy;
+  if(z.type==='rect'){cx=z.x+z.w/2;cy=z.y+z.h/2;}
+  else if(z.type==='poly'&&z.pts?.length>0){cx=z.pts.reduce((s,p)=>s+p.x,0)/z.pts.length;cy=z.pts.reduce((s,p)=>s+p.y,0)/z.pts.length;}
+  else return null;
+  return{x:cx+(z.labelOffsetX||0),y:cy+(z.labelOffsetY||0)};
+}
 const canvas=document.getElementById('mapCanvas');
 const ctx=canvas.getContext('2d');
 const labelInput=document.getElementById('labelInput');
@@ -576,12 +581,10 @@ function renderAllZones(c,zones,selIds){
     else if(z.type==='poly'&&z.pts?.length>0){polyPath(c,z.pts);c.stroke();}
   });
 
-  // Pass 4: labels
+  // Pass 4: labels (with offset support)
   zones.forEach(z=>{
-    let lx,ly;
-    if(z.type==='rect'){lx=z.x+z.w/2;ly=z.y+z.h/2;}
-    else if(z.type==='poly'&&z.pts?.length>0){lx=z.pts.reduce((s,p)=>s+p.x,0)/z.pts.length;ly=z.pts.reduce((s,p)=>s+p.y,0)/z.pts.length;}
-    if(lx!==undefined) drawLabel(c,z.label,lx,ly,z);
+    const lc=zoneLabelCenter(z);
+    if(lc) drawLabel(c,z.label,lc.x,lc.y,z);
   });
 
   // Pass 5: selection indicators (all selected zones)
@@ -597,6 +600,33 @@ function renderAllZones(c,zones,selIds){
     if(!selIds.has(z.id)||z.type!=='poly') return;
     z.pts.forEach(p=>{c.fillStyle='#f7ce62';c.strokeStyle='#111';c.lineWidth=1;c.beginPath();c.arc(p.x,p.y,5,0,Math.PI*2);c.fill();c.stroke();});
   });
+
+  // Pass 6: label drag handle — shown on single-selected zone
+  if(selIds.size===1){
+    const z=zones.find(z=>selIds.has(z.id));
+    if(z){
+      const lc=zoneLabelCenter(z);
+      if(lc){
+        const hasOffset=(z.labelOffsetX||0)!==0||(z.labelOffsetY||0)!==0;
+        // Leader line from zone center to label when offset
+        if(hasOffset){
+          let cx,cy;
+          if(z.type==='rect'){cx=z.x+z.w/2;cy=z.y+z.h/2;}
+          else{cx=z.pts.reduce((s,p)=>s+p.x,0)/z.pts.length;cy=z.pts.reduce((s,p)=>s+p.y,0)/z.pts.length;}
+          c.strokeStyle='rgba(247,206,98,.4)';c.lineWidth=1;c.setLineDash([3,3]);
+          c.beginPath();c.moveTo(cx,cy);c.lineTo(lc.x,lc.y);c.stroke();
+          c.setLineDash([]);
+        }
+        // Label handle dot
+        c.fillStyle='#f7ce62';c.strokeStyle='#111';c.lineWidth=1.5;
+        c.beginPath();c.arc(lc.x,lc.y,5,0,Math.PI*2);c.fill();c.stroke();
+        // Cross-hair lines on the dot
+        c.strokeStyle='#111';c.lineWidth=1;
+        c.beginPath();c.moveTo(lc.x-3,lc.y);c.lineTo(lc.x+3,lc.y);
+        c.moveTo(lc.x,lc.y-3);c.lineTo(lc.x,lc.y+3);c.stroke();
+      }
+    }
+  }
 }
 
 function drawZone(c,z,sel){
@@ -777,15 +807,28 @@ canvas.addEventListener('mousedown',e=>{
       const h=fpCornerAt(x,y);
       if(h){pushHistory();S.resizing=true;S.resizeH=h;S.resizeOrig={...S.fp};return;}
     }
-    // 2. Check zone resize handles (only when single-selected)
+    // 2. Check label drag handle (single-selected zone)
+    if(S.selId&&S.selId!==FP_ID&&S.selIds.size===1){
+      const el=getEl(S.selId);
+      if(el&&(el.type==='rect'||el.type==='poly')){
+        const lc=zoneLabelCenter(el);
+        if(lc&&Math.hypot(x-lc.x,y-lc.y)<=8){
+          pushHistory();
+          S.labelDragging=true;S.labelDragId=el.id;
+          S.labelDragStart={x,y};
+          S.labelDragOrig={ox:el.labelOffsetX||0,oy:el.labelOffsetY||0};
+          return;
+        }
+      }
+    }
+    // 3. Check zone resize handles (only when single-selected)
     if(S.selId&&S.selId!==FP_ID&&S.selIds.size<=1){
       const el=getEl(S.selId);
       if(el?.type==='rect'){const h=zHandleAt(x,y,el);if(h){pushHistory();S.resizing=true;S.resizeH=h;S.resizeOrig=JSON.parse(JSON.stringify(el));return;}}
     }
-    // 3. Hit test
+    // 4. Hit test
     const hit=hitAll(x,y);
     if(e.shiftKey&&hit&&hit!==FP_ID){
-      // Shift+click: toggle zone in/out of multi-select
       if(S.selIds.has(hit)){S.selIds.delete(hit);if(S.selId===hit) S.selId=[...S.selIds][0]||null;}
       else{S.selIds.add(hit);S.selId=hit;}
       updateProps();return;
@@ -853,6 +896,13 @@ canvas.addEventListener('mousedown',e=>{
 canvas.addEventListener('mousemove',e=>{
   const{x,y}=xy(e);S.mx=x;S.my=y;
   if(S.drawing){S.drawCur={x:snap(x),y:snap(y)};}
+  else if(S.labelDragging&&S.labelDragId){
+    const el=getEl(S.labelDragId);
+    if(el){
+      el.labelOffsetX=S.labelDragOrig.ox+(x-S.labelDragStart.x);
+      el.labelOffsetY=S.labelDragOrig.oy+(y-S.labelDragStart.y);
+    }
+  }
   else if(S.dragging&&S.selId){
     const dx=x-S.dragStart.x,dy=y-S.dragStart.y,o=S.dragOrig;
     if(S.selId===FP_ID){S.fp.x=snap(o.x+dx);S.fp.y=snap(o.y+dy);}
@@ -896,12 +946,13 @@ canvas.addEventListener('mouseup',()=>{
     const zw=Math.abs(S.drawCur.x-S.drawStart.x),zh=Math.abs(S.drawCur.y-S.drawStart.y);
     if(zw>10&&zh>10){
       pushHistory();
-      const z={id:newId(),type:'rect',profile:S.profile,label:PROFILES[S.profile].short,x:zx,y:zy,w:zw,h:zh,fontSize:12,rotation:0};
+      const z={id:newId(),type:'rect',profile:S.profile,label:PROFILES[S.profile].short,x:zx,y:zy,w:zw,h:zh,fontSize:12,rotation:0,labelOffsetX:0,labelOffsetY:0};
       S.zones.push(z);S.selId=z.id;updateProps();
     }
     S.drawing=false;S.drawStart=null;S.drawCur=null;
   }
   S.dragging=false;S.resizing=false;S.resizeH=null;
+  S.labelDragging=false;S.labelDragId=null;
   S.snapLinesX=[];S.snapLinesY=[];
 });
 
@@ -919,13 +970,18 @@ canvas.addEventListener('contextmenu',e=>{e.preventDefault();if(S.tool==='poly'&
 function closePoly(){
   if(S.polyPts.length<3) return;
   pushHistory();
-  const z={id:newId(),type:'poly',profile:S.profile,label:PROFILES[S.profile].short,pts:[...S.polyPts],fontSize:12,rotation:0};
+  const z={id:newId(),type:'poly',profile:S.profile,label:PROFILES[S.profile].short,pts:[...S.polyPts],fontSize:12,rotation:0,labelOffsetX:0,labelOffsetY:0};
   S.zones.push(z);S.selId=z.id;S.polyPts=[];S.drawing=false;S.drawCur=null;updateProps();
 }
 
 function updateCursor(x,y){
   if(S.tool==='select'){
     if(S.selId===FP_ID&&S.floorPlan){const h=fpCornerAt(x,y);if(h){canvas.style.cursor=h.cur;return;}}
+    // Label handle cursor
+    if(S.selId&&S.selId!==FP_ID&&S.selIds.size===1){
+      const el=getEl(S.selId);
+      if(el){const lc=zoneLabelCenter(el);if(lc&&Math.hypot(x-lc.x,y-lc.y)<=8){canvas.style.cursor='grab';return;}}
+    }
     if(S.selId&&S.selId!==FP_ID){const el=getEl(S.selId);if(el?.type==='rect'){const h=zHandleAt(x,y,el);if(h){canvas.style.cursor=h.cur;return;}}}
     canvas.style.cursor=hitAll(x,y)?'move':'default';return;
   }
@@ -1032,6 +1088,14 @@ function updateProps(){
     document.getElementById('pFontSize').oninput=e=>{el.fontSize=Math.max(7,Math.min(24,parseInt(e.target.value)||12));};
     document.getElementById('pRotH').onclick=()=>{pushHistory();el.rotation=0;updateProps();};
     document.getElementById('pRotV').onclick=()=>{pushHistory();el.rotation=90;updateProps();};
+    const hasOffset=(el.labelOffsetX||0)!==0||(el.labelOffsetY||0)!==0;
+    if(hasOffset){
+      const resetBtn=document.createElement('button');
+      resetBtn.className='prop-btn';resetBtn.style.marginTop='4px';
+      resetBtn.textContent='Reset label position';
+      resetBtn.onclick=()=>{pushHistory();el.labelOffsetX=0;el.labelOffsetY=0;updateProps();};
+      document.getElementById('pDel').before(resetBtn);
+    }
     document.getElementById('pDel').onclick=()=>removeEl(el.id);
   } else if(el.type==='repeater'){
     p.innerHTML=`
@@ -1129,7 +1193,7 @@ Return ONLY a JSON array: [{"profile":"Freezer","label":"FREEZER","x_pct":0.05,"
     const zones=JSON.parse(match[0]);let count=0;
     for(const z of zones){
       const profile=Object.keys(PROFILES).find(p=>p.toLowerCase()===z.profile?.toLowerCase())||'Dry';
-      const zone={id:newId(),type:'rect',profile,label:z.label||PROFILES[profile].short,x:Math.round(z.x_pct*CW),y:Math.round(z.y_pct*CH),w:Math.round(z.w_pct*CW),h:Math.round(z.h_pct*CH),fontSize:12,rotation:0};
+      const zone={id:newId(),type:'rect',profile,label:z.label||PROFILES[profile].short,x:Math.round(z.x_pct*CW),y:Math.round(z.y_pct*CH),w:Math.round(z.w_pct*CW),h:Math.round(z.h_pct*CH),fontSize:12,rotation:0,labelOffsetX:0,labelOffsetY:0};
       if(zone.w>10&&zone.h>10){S.zones.push(zone);count++;}
     }
     document.getElementById('aiOverlay').classList.remove('show');
